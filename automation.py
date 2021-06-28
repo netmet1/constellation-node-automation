@@ -55,7 +55,8 @@ def node_checkup(config,send_report=False):
 
 def determine_run_schedule(config,report):
     now = datetime.now()
-    print(f"determine {now}")
+    # print(f"determine {now}") # debugging
+    
     if config.last_run == "never":
         if config.alert_interval > 60:
             # lazy way out.
@@ -70,13 +71,15 @@ def determine_run_schedule(config,report):
                 config.last_run = now 
                 node_checkup(config)
                 break
+
         return config
 
     next_run = config.last_run + timedelta(minutes=config.alert_interval)
     if now >= next_run:
         config.last_run = now 
         node_checkup(config,report)
-        return config
+    
+    return config
 
 
 # ===================
