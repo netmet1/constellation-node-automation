@@ -1,0 +1,64 @@
+# Ref: https://github.com/github/gitignore/blob/master/Terraform.gitignore
+# Local .terraform directories
+
+# Crash log files
+crash.log
+
+# packer variables file
+*variables.json
+
+# For JetBrains IDEs
+/.idea/
+
+# For Visual Studio Code
+/*.code-workspace
+
+# Temporary Folder Not to Upload
+/temp/
+/local_files_only/
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Do not update configs
+configs/config.yaml
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Discord Add-On Module
+# We want to set this to avoid any accidental leakage of our token(s).
+*.token.*
+*.token
+
+# We don't want to push our IDE configuration folder(s) to our repo.
+.idea/
+.vscode/
+*.sw*
+
+# We also do not want to accidentally push any of the scraped data to our Github either.
+scrapes/
+
+# We do not want to accidentally push any of the cached JSON data to our Github either.
+cached/
+
+# We don't want to push any precompiled Python files to be pushed either.
+module/__pycache__/
+module/*.pyc

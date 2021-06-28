@@ -1,0 +1,46 @@
+# DAG Node Alerting Script
+# v0.1b
+# Author: hgtp://netmet
+# ========================
+#
+# IMPORTANT:  See the README.md file in the github repo
+#             or root of the DAG Node Alerting script
+#             for more details and understanding of each
+#             of the parameters in the configuration file
+#             INCORRECT settings could leave to not only
+#             unpredictable runtime issues, but it could
+#             lead to inaccurate stats and information.
+# 
+
+configuration:
+  email:
+    gmail_acct: gmail_source_email@gmail.com
+    gmail_token: gmail_app_password
+    mms_recipients:
+        - 111111111@provider.gateway.net
+        - 222222222@provider.gateway.net
+        - whoever@whoever.com
+  constraints:
+    error_max: 20
+    memory_swap_min: 200000
+    security_check: true
+  intervals:
+    start_time: '07:00'
+    end_time: '20:00'
+    int_minutes: 15
+    security_check: true
+  splits:
+    enabled: true
+    split1: 0.7
+    split2: 0.3
+  collateral:
+    enabled: true
+    node_count: 1 
+  report_estimates:
+    - .1
+    - .5
+    - 1
+    - 3
+    - 5
+    - 10
+    - 50
