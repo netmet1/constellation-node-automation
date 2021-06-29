@@ -18,9 +18,9 @@
 ---
 ### ABOUT THIS PROGRAM <a name="what"></a>
 
-A fun little program to run on your node.  It will send you alerts so you can keep up to date on the progress of your node, DAGs, rewards, and basic **system engineering** statistics, to help keep you in the know.
+A fun program to run on your node.  It will send you alerts so you can keep up to date on the progress of your node, DAGs, rewards, and basic **system engineering** statistics, to help keep you in the know.
 
-**THIS IS A FREE AND SIMPLE PROGRAM, IT TAKES NO RESPONSIBILITY FOR RESULTS, OUTCOMES, AND ANYTHING ELSE THAT MIGHT CAUSE ISSUES.  USE AT YOUR OWN RISK**
+**IT TAKES NO RESPONSIBILITY FOR RESULTS, OUTCOMES, AND ANYTHING ELSE THAT MIGHT CAUSE ISSUES.  USE AT YOUR OWN RISK**
 
 #### This is a dynamic script that runs directly on your node to update you with your node's progress via:
     1. Text Message (mms or sms)
@@ -40,6 +40,7 @@ A fun little program to run on your node.  It will send you alerts so you can ke
 
 - Log Error Rate Alerting
 - Node Reward Accumulation
+    - Possible reset detection
 - Node Reward/Collateral Accumulation
 - $DAG to USD
 - Current $DAG price v. USD
@@ -48,6 +49,10 @@ A fun little program to run on your node.  It will send you alerts so you can ke
 - Node State
 - Data Usage
 - Memory and Swap Warning
+- Security Checks
+    - Unauthorized login attempts
+    - Login attempt port ranges
+    - Brute Force Login Failures
 - Network Node List Size
 - Reinvestment to Income Splits
 - Earned Node Counter
@@ -63,8 +68,8 @@ A fun little program to run on your node.  It will send you alerts so you can ke
 
 | CLI Parameter | Description |
 | :-------------: | :--------- | 
-| **auto** | This will start the program and continue running until `ctl-c` is executed.  It will run in the foreground, unless you use `&`. The system will use the information from the [configuration](#config) parameters.  `start_time`, `end_time`, and `int_minutes`. |
-| **alert** | This will run the a system alert report once.  This allows you to run a one-time instance of the program, at the time of your choice. |
+| **auto** | This will start the program and continue running until `ctl-c` is executed, or the job is `killed`.  It will run in the foreground, unless you use `&`. The system will use the information from the [configuration](#config) parameters.  `start_time`, `end_time`, and `int_minutes`. |
+| **alert** | This will run the a system alert report once.  This allows you to run a one-time instance of the program, at the time of your choice (current moment in time when executed). |
 | **report** | This will run the system and send the `end of the day` report once.  This allows you to run a one-time instance of the program, at the time of your choice. *Note: This may produce unexpected statistical results, if not run at the end of the day.* |
 | **silent** | This will run the program and update log files, but will **not** alert to the user via MMS, SMS or email. |
 
@@ -96,7 +101,7 @@ or run it in the background
 python3 automation.py auto &
 ```
 > **The `auto` command will execute the `alert` command every [n](#config) `int_minutes`, between the times configured in the [interval](#config) section of the configuration
-file.  At 5 minutes past the `end_time`, the `report` command will be issued.  No alerts will be sent outside of the `start_time` and `end_time`.**
+file.  At the `end_time`, the `report` command will be issued.  No alerts will be sent outside of the `start_time` and `end_time`.**
 
 #### Send out a manual alert
 
@@ -109,6 +114,7 @@ MMS (SMS) message on the phone or email will be received, upon execution complet
 ```
 MAINNET
 =========================
+2021-06-30 12:30:00
 Rewards: 300,000 +12
 USD: $17,411.40 +$0.70
 $12,187.98/$5,223.42
@@ -131,19 +137,19 @@ Port Range: 1034-65428
 Max Login Exceeded: 15
 ```
 
-> Results above are fictitious. `node_count` parameter set to `1`.
+> Results above are fictitious. `node_count` parameter set to `1` (details here: [node_count](#node_count)).
 
 <a name="alert_readout_key"></a>
 | KEY | Result Description |
 | ---: | :------ |
 | rewards | How many rewards you have earned so far. How much your collateral has increased since the last time the program ran (incremental). |
 | USD | What is your rewards worth in $USD.  How much has it changed `+` for increases, `()` for decreases. |
-| Splits | Based on the [splits](#config) setup in the configuration, it will show you `split1`|`split2`|
+| Splits | Based on the [splits](#config) setup in the configuration, it will show you `split1`/`split2` |
 | DAG Price | What is the current price, based on an API call in real time. (coingecko) |
 | DAG Price Change | What was the change since the last lookup `+` for increases, `()` for decreases. |
 | Collateral Nodes | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of Nodes you could possibly have. |
 | Collateral DAGs | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of DAGs you should have. | 
-| Next Node | How many DAGs you have to earn before you earn another Node based on collateral. |
+| Next Node | How many DAGs you have to earn before you earn another Node based on collateral and rewards earned. |
 | Node Status | What is the status of your node, based on a `dag metrics`. |
 | Web Status | What is the status of your node's web interface, based on a `dag metrics`. |
 | Data Usage | How much space is available on your HD based on a systems command results. |
@@ -153,6 +159,30 @@ Max Login Exceeded: 15
 | Inv Login Attempts | For the entire `auth.log` file, how many times has a user auth attempt begin denied. |
 | Port Range | What was the lowest port and highest port where invalid login attempts were logged.  **If this shows below `1024`, this may be cause for concern.** |
 | Max Login Exceeded | How many times has the system noticed and created an error log message, due to a possible brut force password attempt. (`auth.log`) |
+
+During the execution of an alert, if an error in the output of `Rewards` is non-integer. 
+
+```
+MAINNET
+=========================
+Error Detected
+Possible Reset Required?
+Rewards: 0 (-300000)
+[...]
+```
+
+When the constellation log file goes over the [error threshold](#error_threshold).
+
+```
+Log Size: 157893
+Errors:: 48
+Percentage:: 0.0304%
+
+MAINNET
+=========================
+2021-06-29 08:30:35
+[...]
+```
 
 #### Send out manual end of day report.
 
@@ -165,7 +195,7 @@ MMS message on the phone or email will be received
 ```
 END OF DAY REPORT
 =================
-8 Hours
+8 Hours 30 Minutes
 START: 2021-06-26 07:00:00
 END: 2021-06-26 15:30:00
 ---
@@ -231,7 +261,7 @@ YEARLY  : $90,720,000
 
 > Based on [config](#config) file that is set to $0.1, $0.5, $3, $5, $0 ,$50, $100
 
-> **NOTE: If the script doesn't run for the day, the results will (obviously) be incorrect or screwed.  It works off the `dag_count.log` file located in the root of the automation script** *Log rolling is not enabled, so you will need to keep an eye on the file, until a new release adds the log rolling feature.*
+> **NOTE: If the script doesn't run for the day, the results will (obviously) be incorrect or screwed.  It works off the `dag_count.log` file located in the root of the automation script folder.** *Log rolling is not enabled, so you will need to keep an eye on the file, until a new release adds the log rolling feature.*
 
 ## INSTALLATION <a name="installation"></a>
 
@@ -258,13 +288,15 @@ Navigate to Gmail, and setup your account *or* login to your existing account.
 1. `App passwords` option should appear.
 1. Click `App passwords`.
 1. From the `Select App` dropdown select `other`
-1. Give it a name:  *example) **DAGemailAlerts**
+1. Give it a name:  *example)* **DAGemailAlerts**
 1. Click `GENERATE`
 1. Copy and **save** the password for later.
 
 **PREPARE MMS EMAIL ADDRESSES**
 
-Figure out the proper email addresses that correlate to your phone providers MMS and SMS gateways.  You will find a nice cheat sheet in the following link below. Navigate to `step 3` on the website.
+Figure out the proper email addresses that correlate to your phone providers MMS and SMS gateways.  You will find a nice cheat sheet in the following link below. Navigate to `step 3` on the website.  
+
+> This speaks to United States carriers, please refer to your countries carrier to complete this step.
 
 https://www.digitaltrends.com/mobile/how-to-send-a-text-from-your-email-account/
 
@@ -276,10 +308,13 @@ In order to properly display the text messages, it is highly recommended to use 
 
 Log into your node  
 
->**NOTE**: The username of the box will be either `root` or whatever username you setup on the Node, when you set yourself up to join the constellation network.    These instructions will use a user called `nodeuser`.
+>**NOTE**: The username of the box will be either `root` or whatever username you setup on the Node.  This was done when you set yourself up to join the constellation network.  These instructions will use a user called `nodeuser`.
 
 Create a dedicated directory for your automation script.
 
+If you decide **not** to do a `git clone`, you may not want or need to create the `automation` folder, as git will create a new directory `constellation-node-automation` which would suffice.
+
+Without Git Clone, create the following:
 ```
 nodeuser@constellation-node:/# cd ~
 nodeuser@constellation-node:~# mkdir automation
@@ -297,7 +332,7 @@ You will need python3 installed.
 nodeuser@constellation-node:~# python3 --version
 Python 3.6.9
 ```
-If you get an error
+If you get an error.
 ```
 sudo apt-get install python3
 ```
@@ -307,17 +342,16 @@ You will need `pip3` installed.
 root@constellation-node:~# pip3 --version
 pip 9.0.1 from /usr/lib/python3/dist-packages (python 3.6)
 ```
-If you get an error 
+If you get an error.
 ```
 sudo apt-get install python3-pip
 ```
 
 **Ready to install program**
 
-git clone this project onto your node (recommended) **or**, copy the necessary files over to your `/nodeuser/automation` directory. (*how to clone the git repo is out of scope of this documentation*)
+**`git clone`** this project onto your node (recommended) **or**, copy the necessary files over to your `/nodeuser/automation` directory. (*how to clone the git repo is out of scope of this documentation.*)
 
-*NOTE: You may want to git clone from the root of your node user's home directory to avoid going to deep into your directory structure.*
-
+File structure should appear as follows:
 ```
 automation
 ├── dag_count.log
@@ -330,14 +364,14 @@ automation
 │   │   ├── reports.py
 │   │   └── send_sms_email.py
 ├── configs
-│   │   ├── config.yaml
+│   │   ├── config.example.yaml
 ```
 
-> You will need to rename the `config.example.yaml` file to `config.yaml` and update with correct settings.
+> You will need to rename the `config.example.yaml` file to `config.yaml` and update with correct [settings](#config).
 
 ## CONFIGURATION <a name="config"></a>
 
-Navigate to your `config.yaml` file and open with your favorite editor.  
+Rename `config.example.yaml` to `config.yaml`. Navigate to your `config.yaml` file and open with your favorite editor.  
 You **MUST** update this file in order for the script to function properly.
 
 >This is the **ONLY** file that you should be manipulating.  All other files in this program/script should be left alone.
@@ -384,23 +418,23 @@ configuration:
 | **email** | | email parameters needed for program to function properly.
 | - | `gmail_acct` | Gmail account you created or used in the [Setup Gmail](#gmail) section. | - | - | yes
 | - | `gmail_token` | Password you saved in the [App Password](#gmail) section. | - | - | yes
-| - | `mms_recipients` | Making sure you leave the `-` and indentation unchanged, add in your mobile number and/or email addresses where you want to send the reports.  If you only have `1 ` email, you can remove the extra list item(s).  If you have more than `2`, you can add in as many list entries (starting with a dash) as you like.  **NOTE**: It is unknown how many requests will be accepted/allowed by Gmail or your mobile provider, so you may need to be cognizant of this when setting up complex lists of email recipients. | - | - | yes
+| - | `mms_recipients` | Making sure you leave the `-` and indentation unchanged, add in your mobile number and/or email addresses where you want to send the reports.  If you only have `1` email, you can remove the extra list item(s).  If you have more than `2`, you can add in as many list entries (starting with a dash) as you like.  **NOTE**: *It is unknown how many requests will be accepted/allowed by Gmail or your mobile provider, so you may need to be cognizant of this when setting up complex lists of email recipients.* | - | - | yes
 | **constraints** |  | This section should only be modified by more advanced users.  It allows you to manipulate several program thresholds.|
-| - | `error_max` | How many errors should accumulate in the constellation log file before notifying in an alert.  *Note*: The constellation log file is configured to roll, so the low error count is justified and only pertains to the current log. | decimal | `20` | no
+| - | `error_max` | How many errors should accumulate in the constellation log file before notifying in an alert.  **Note**: *The constellation log file is configured to roll, so the low error count is justified and only pertains to the current log.* | decimal | `20` | no
 | - | `memory_swap_min` | Low end threshold before alerting that memory or swap is low.  The same decimal is used to check both.  Memory and Swap are independently checked. | decimal | `100000` | no
 | - | `security_check` | Do you want the system to count unauthorized access requests and ports. | boolean | `false` | no
 | **interval** |  | Setup when you want the alerts to start/stop being pushed to your `mms_email_recipients`. |
 | - | `start_time` | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the script to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
 | - | `end_time` | 24 hour clock notation - local time zone.  When do you want the alerting to stop each day? **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'20:00'` | no
-| - | `int_minutes` | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (5,10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
-| **splits** | | This section is an optional configuration. When enabled, this feature will break out rewards/income into percentages between split1 and split2.  When added together this should equal 1 (100%), otherwise calculations will not be accurate.  `Example`: You want to calculate how much of your income will be used for reinvestment (split1) verses taking profits (split2). |
+| - | `int_minutes` | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
+| **splits** | | This section is an optional configuration. When enabled, this feature will break out rewards/income into percentages between `split1` and `split2`.  When added together this should equal 1 (100%), otherwise calculations will not be accurate.  `Example`: You want to calculate how much of your income will be used for reinvestment (split1) verses taking profits (split2). |
 | - | `enabled` | Enable this feature. | boolean | `false` | yes
 | - | `split1` | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
 | - | `split2` | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
 | **collateral** | | This section is an optional configuration. When enabled, this feature will calculate your current collateral as it relates to the 250K USD requirement for obtaining a new node. |
 | - | `enabled` | Enable this feature. | boolean | `false` | yes 
-| - | `node_count` | ***NOT INCLUDING THIS NODE*** how many *other* nodes do you own that you want to include in the collateral calculations?  Note: Until the script couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. | int | `0` | if enabled  
-| **reports** | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the list provided. |
+| - | `node_count` | ***NOT INCLUDING THIS NODE***. <a name="node_count"></a> How many *other* nodes do you own that you want to include in the collateral calculations?  Note: Until the script couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. | int | `0` | if enabled  
+| **reports** | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the `estimates` list provided. |
 | - | `enabled` | Enable this feature. | boolean | `false` |  yes
 | - | `estimates` | $USD that you want to have the $DAG count translated into for the `end of day` report. *Note*: Make sure to leave the `-` in front of each list item.  You can have as many as you deem necessary, or you can remove list items that aren't wanted/needed. | float | `.50`, `1`, `5`, `10`, `100` |  no 
 
@@ -412,7 +446,7 @@ configuration:
 
 Setup the crontab on your system to start the program at reboot.
 
-> **NOTE**: This is if you want the program to run on startup and alert; based on the settings in the configuration file.  If you do not want to do it this way, you can see the alternative option to run via the crontab iteratively, verses running the program in the background.
+> **NOTE**: This is if you want the program to run on startup and alert; based on the settings in the configuration file.  If you do not want to do it this way, you can see the [alternative option](#alt_cron) to run via the crontab iteratively, verses running the program in the background.
 
 ```
 nodeuser@constellation-node:/# crontab -e
@@ -425,13 +459,13 @@ Add the following to the bottom of the file.  see [usage section](#usage) for de
 @reboot /usr/bin/python3 /nodeuser/automation/automation.py auto >> ~/cron.log 2>&1
 ```
 
-Start the program manually, because you don't want to reboot:
+Start the program manually, because you don't want to reboot.  The first alert will not appear until the designated interval:
 
 ```
-nodeuser@constellation-node:~# python3 automation.py auto &
+nodeuser@constellation-node:~# nohup python3 automation.py auto &
 ```
 
-##### Alternative <a name="alt_cron">
+##### Alternative CRON Method <a name="alt_cron">
 
 ```
 nodeuser@constellation-node:/# crontab -e

@@ -31,27 +31,25 @@ class Config():
         # defaults
         default_startdate_parameter = "07:00"  # for ease of reading/changing
         default_enddate_parameter = "20:00"    # for ease of reading/changing
-        current = datetime.now().strftime("%Y-%m-%d")
-        default_start = datetime.strptime(current+" "+default_startdate_parameter, "%Y-%m-%d %H:%M")
-        default_end = datetime.strptime(current+" "+default_enddate_parameter, "%Y-%m-%d %H:%M")
+        self.current_date = datetime.now().strftime("%Y-%m-%d")
 
         self.action = self.dag_args.Action
 
         try:
-            start = datetime.strptime(current+" "+self.config['intervals']['start_time'], "%Y-%m-%d %H:%M")
+            start = datetime.strptime(self.config['intervals']['start_time'], "%H:%M")
         except:
-            start = default_start
+            start = default_startdate_parameter
         try:
-            end = datetime.strptime(current+" "+self.config['intervals']['end_time'], "%Y-%m-%d %H:%M")
+            end = datetime.strptime(self.config['intervals']['end_time'], "%H:%M")
         except:
-            end = default_end
+            end = default_enddate_parameter
 
         if start > end:
-            start = default_start
-            end = default_end
+            start = default_startdate_parameter
+            end = default_enddate_parameter
         elif start == end:
-            start = datetime.strptime(current+" 00:00", "%Y-%m-%d %H:%M")
-            end = datetime.strptime(current+" 23:50", "%Y-%m-%d %H:%M") # leave time for report feature
+            start = datetime.strptime("00:00", "%H:%M")
+            end = datetime.strptime("23:50", "%H:%M") # leave time for report feature
 
         self.start_time = start - timedelta(minutes=start.minute % 15)
         self.end_time = end - timedelta(minutes=end.minute % 15)

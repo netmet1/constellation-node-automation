@@ -1,9 +1,6 @@
 import argparse
 from datetime import datetime, timedelta
-import os
-import yaml
-import schedule
-import time
+from time import sleep
 
 from classes.error_log_check import ErrorLogCheck 
 from classes.check_dag_status import CheckDagStatus
@@ -54,9 +51,10 @@ def node_checkup(config,send_report=False):
 
 
 def determine_run_schedule(config,report):
-    now = datetime.now()
+    now = datetime.now().strftime("%H:%M")
+    now = datetime.now().strptime(now,"%H:%M")
     # print(f"determine {now}") # debugging
-    
+
     if config.last_run == "never":
         if config.alert_interval > 60:
             # lazy way out.
@@ -93,14 +91,15 @@ if __name__ == "__main__":
 
     if config.action == "auto":
         while True:
-            now = datetime.now()
+            now = datetime.now().strftime("%H:%M")
+            now = datetime.now().strptime(now,"%H:%M")
             if now >= config.start_time and now < config.report_time_plus:
                 if now > config.end_time:
                     report = True
                 else:
                     report = False
                 config = determine_run_schedule(config,report)
-            time.sleep(2)
+            sleep(2)
     else:
         if config.action == "report":
             node_checkup(config,True)

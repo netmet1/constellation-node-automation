@@ -55,7 +55,7 @@ class CreateReport():
         print(dag_dict)
         print(usd_dict)
         print(self.dag_usd_dict)
-        
+
         dags_for_day = dag_dict["last"] - dag_dict["first"]
         # usd_for_day = usd_dict["last"] - usd_dict["first"]
         dag_change = '{:.8f}'.format(self.dag_usd_dict["last"] - self.dag_usd_dict["first"])
@@ -87,8 +87,8 @@ class CreateReport():
 END OF DAY REPORT
 =================
 {self.config.day_time_frame} 
-START: {self.config.start_time}
-END: {self.config.end_time}
+START: {self.config.current_date} {self.config.start_time}
+END: {self.config.current_date} {self.config.end_time}
 ---
 REWARDS: {self.dag_metrics[0]:,}
 AVE/15Min: {self.dag_metrics[1]:,}
