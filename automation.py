@@ -58,10 +58,8 @@ def auto_run_schedule(config):
     # killed or the ctl-c. This program is designed to run continuously. 
     while True:
         if now >= config.start_time and now <= config.report_time: 
-            print("inside time requirements...")
             while True:
                 if config.last_run == "never":
-                    print("in initialization loop...")
                     now = datetime.now().strftime("%H:%M")
                     now = datetime.now().strptime(now,"%H:%M")
                     if config.alert_interval > 60:
@@ -72,14 +70,12 @@ def auto_run_schedule(config):
                         start_interval = config.alert_interval
 
                     for n in range(0,60,start_interval):
-                        print(f"range now | {now}")
                         if now.minute == n:
                             # set time first to avoid synchronous distortion
                             config.last_run = now 
                             node_checkup(config)
                             break
                     if config.last_run != "never":
-                        print("in break")
                         break
                     sleep(2)
                 else:
@@ -101,9 +97,6 @@ def auto_run_schedule(config):
                 else:
                     break
 
-                print(f"now | {now}")
-                print(f"last_run | {config.last_run}")
-                print(f"next_run | {next_run}")
         else:
             config.last_run = config.start_time - timedelta(minutes=15)
             sleep(2)

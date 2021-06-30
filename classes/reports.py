@@ -27,13 +27,14 @@ class CreateReport():
         usd = 0
         dag_dict = {}
         usd_dict = {}
-        
-
+                
         f = open(f"/{self.config.username}/automation/dag_count.log","r")
         lines = f.readlines()
         last_line = lines[len(lines)-1]
 
         first = True
+        self.dag_usd_dict["low_price"] = 9999999
+        self.dag_usd_dict["hi_price"] = -1
 
         for line in lines:
             if self.today in line:
@@ -51,6 +52,12 @@ class CreateReport():
                     dag_dict["last"] = dags
                     usd_dict["last"] = usd
                     self.dag_usd_dict["last"] = dag_usd_price
+                    
+                if self.dag_usd_dict["low_price"] > dag_usd_price:
+                    self.dag_usd_dict["low_price"] = dag_usd_price
+                if self.dag_usd_dict["hi_price"] < dag_usd_price:
+                    self.dag_usd_dict["hi_price"] = dag_usd_price
+                
 
         dags_for_day = dag_dict["last"] - dag_dict["first"]
         # usd_for_day = usd_dict["last"] - usd_dict["first"]
@@ -82,7 +89,7 @@ class CreateReport():
         self.report_str = f"""
 END OF DAY REPORT
 =================
-{self.config.day_time_frame} 
+Report Range: {self.config.day_time_frame} 
 START: {self.config.current_date} {self.config.start_time}
 END: {self.config.current_date} {self.config.end_time}
 ---
@@ -94,6 +101,8 @@ AVE/1Hour: {self.dag_metrics[3]:,}
 $DAG DAY START: {self.dag_usd_dict["first"]}
 $DAG DAY END  : {self.dag_usd_dict["last"]}
 $DAG CHANGE   : {dag_change}
+$DAG HIGH     : {self.dag_usd_dict["hi_price"]}
+$DAG LOW     : {self.dag_usd_dict["low_price"]}
 ---
 $DAG ESTIMATES
 Daily  : {self.dag_metrics[3]*24:,}
