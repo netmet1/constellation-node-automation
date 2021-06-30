@@ -50,34 +50,63 @@ def node_checkup(config,send_report=False):
         SendAMessage(msg_action,msg,config)
 
 
-def determine_run_schedule(config,report):
+def auto_run_schedule(config):
     now = datetime.now().strftime("%H:%M")
     now = datetime.now().strptime(now,"%H:%M")
-    # print(f"determine {now}") # debugging
 
-    if config.last_run == "never":
-        if config.alert_interval > 60:
-            # lazy way out.
-            # if the interval is over 60 minutes, start on the quarter hour.
-            start_interval = 15
+    # If the auto param is called, this loop will never be exited, until the job is
+    # killed or the ctl-c. This program is designed to run continuously. 
+    while True:
+        if now >= config.start_time and now <= config.report_time: 
+            print("inside time requirements...")
+            while True:
+                if config.last_run == "never":
+                    print("in initialization loop...")
+                    now = datetime.now().strftime("%H:%M")
+                    now = datetime.now().strptime(now,"%H:%M")
+                    if config.alert_interval > 60:
+                        # lazy way out.
+                        # if the interval is over 60 minutes, start on the quarter hour.
+                        start_interval = 15
+                    else:
+                        start_interval = config.alert_interval
+
+                    for n in range(0,60,start_interval):
+                        print(f"range now | {now}")
+                        if now.minute == n:
+                            # set time first to avoid synchronous distortion
+                            config.last_run = now 
+                            node_checkup(config)
+                            break
+                    if config.last_run != "never":
+                        print("in break")
+                        break
+                    sleep(2)
+                else:
+                    break
+
+            while True:
+                now = datetime.now().strftime("%H:%M")
+                now = datetime.now().strptime(now,"%H:%M")
+                next_run = config.last_run + timedelta(minutes=config.alert_interval)
+
+                if (now >= config.start_time and now <= config.report_time) and next_run <= config.report_time: 
+                    if now > config.end_time:
+                        config.last_run = now 
+                        node_checkup(config,True)
+                    elif now >= next_run:
+                        config.last_run = now 
+                        node_checkup(config)
+                    sleep(2)
+                else:
+                    break
+
+                print(f"now | {now}")
+                print(f"last_run | {config.last_run}")
+                print(f"next_run | {next_run}")
         else:
-            start_interval = config.alert_interval
-
-        for n in range(0,60,start_interval):
-            if now.minute == n:
-                # set time first to avoid synchronous distortion
-                config.last_run = now 
-                node_checkup(config)
-                break
-
-        return config
-
-    next_run = config.last_run + timedelta(minutes=config.alert_interval)
-    if now >= next_run:
-        config.last_run = now 
-        node_checkup(config,report)
-    
-    return config
+            config.last_run = config.start_time - timedelta(minutes=15)
+            sleep(2)
 
 
 # ===================
@@ -90,16 +119,7 @@ if __name__ == "__main__":
     config = Config(dag_args)
 
     if config.action == "auto":
-        while True:
-            now = datetime.now().strftime("%H:%M")
-            now = datetime.now().strptime(now,"%H:%M")
-            if now >= config.start_time and now < config.report_time_plus:
-                if now > config.end_time:
-                    report = True
-                else:
-                    report = False
-                config = determine_run_schedule(config,report)
-            sleep(2)
+        auto_run_schedule(config)
     else:
         if config.action == "report":
             node_checkup(config,True)

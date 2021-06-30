@@ -28,38 +28,34 @@ class Config():
 
 
     def setup_dates_times(self):
-        # defaults
-        default_startdate_parameter = "07:00"  # for ease of reading/changing
-        default_enddate_parameter = "20:00"    # for ease of reading/changing
         self.current_date = datetime.now().strftime("%Y-%m-%d")
-
-        self.action = self.dag_args.Action
 
         try:
             start = datetime.strptime(self.config['intervals']['start_time'], "%H:%M")
         except:
-            start = default_startdate_parameter
+            start = datetime.strptime("07:00", "%H:%M")
         try:
             end = datetime.strptime(self.config['intervals']['end_time'], "%H:%M")
         except:
-            end = default_enddate_parameter
+            end = datetime.strptime("20:00","%H:%M")
 
         if start > end:
-            start = default_startdate_parameter
-            end = default_enddate_parameter
+            start = datetime.strptime("07:00", "%H:%M")
+            end = datetime.strptime("20:00","%H:%M")
         elif start == end:
             start = datetime.strptime("00:00", "%H:%M")
             end = datetime.strptime("23:50", "%H:%M") # leave time for report feature
 
         self.start_time = start - timedelta(minutes=start.minute % 15)
-        self.end_time = end - timedelta(minutes=end.minute % 15)
-        self.report_time_plus = self.end_time + timedelta(minutes=7)
+        self.report_time = end - timedelta(minutes=end.minute % 15)
+        self.end_time = self.report_time - timedelta(minutes=15)
 
         self.day_time_frame = f"{end.hour - start.hour} Hours {end.minute - start.minute} Minutes"
         self.day_run_hours = end.hour - start.hour
 
 
     def setup_variables(self):
+        self.action = self.dag_args.Action
         self.mms_email_recipients = self.config['email']['mms_recipients']
         self.email = self.config['email']['gmail_acct']
         self.token = self.config['email']['gmail_token']

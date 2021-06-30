@@ -52,10 +52,6 @@ class CreateReport():
                     usd_dict["last"] = usd
                     self.dag_usd_dict["last"] = dag_usd_price
 
-        print(dag_dict)
-        print(usd_dict)
-        print(self.dag_usd_dict)
-
         dags_for_day = dag_dict["last"] - dag_dict["first"]
         # usd_for_day = usd_dict["last"] - usd_dict["first"]
         dag_change = '{:.8f}'.format(self.dag_usd_dict["last"] - self.dag_usd_dict["first"])
