@@ -56,7 +56,7 @@ class Config():
 
     def setup_variables(self):
         self.action = self.dag_args.Action
-        self.dag_log_file = self.path.replace("classes","dag_count.log")
+        self.dag_log_file = self.path.replace("classes","logs/dag_count.log")
         self.mms_email_recipients = self.config['email']['mms_recipients']
         self.email = self.config['email']['gmail_acct']
         self.token = self.config['email']['gmail_token']

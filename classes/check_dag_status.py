@@ -136,7 +136,7 @@ class CheckDagStatus():
 
 
     def calculate_stat_variables(self):
-        f = open(f"/{self.config.username}/automation/dag_count.log")
+        f = open(self.config.dag_log_file)
         last_line = f.readlines()
         f.close()
 
@@ -276,7 +276,7 @@ class CheckDagStatus():
     def writeout_stats_logs(self):
         result = f"{self.today}|{self.current_dag_count}|{self.current_price_usd}|{self.usd_dag_price}\n"
 
-        f = open(f"/{self.config.username}/automation/dag_count.log", "a")
+        f = open(self.config.dag_log_file, "a")
         f.write(result)
         f.close()
 

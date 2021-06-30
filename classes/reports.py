@@ -102,7 +102,7 @@ $DAG DAY START: {self.dag_usd_dict["first"]}
 $DAG DAY END  : {self.dag_usd_dict["last"]}
 $DAG CHANGE   : {dag_change}
 $DAG HIGH     : {self.dag_usd_dict["hi_price"]}
-$DAG LOW     : {self.dag_usd_dict["low_price"]}
+$DAG LOW      : {self.dag_usd_dict["low_price"]}
 ---
 $DAG ESTIMATES
 Daily  : {self.dag_metrics[3]*24:,}

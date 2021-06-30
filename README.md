@@ -207,6 +207,8 @@ AVE/1Hour: 105
 $DAG DAY START: 0.057189
 $DAG DAY END  : 0.058153
 $DAG CHANGE   : 0.00096400
+$DAG HIGH     : 0.065948
+$DAG LOW      : 0.056524
 ---
 $DAG ESTIMATES
 Daily  : 2,520
@@ -347,6 +349,17 @@ If you get an error.
 sudo apt-get install python3-pip
 ```
 
+### IMPORTANT
+**The constellation installation is expected to be in the root of your node's user's home directory.**
+
+```
+nodeuser@constellation-node:~/constellation# pwd
+/nodeuser/constellation
+nodeuser@constellation-node:~/constellation#
+```
+
+You cannot run a `report` until an `alert` has been run.
+
 **Ready to install program**
 
 **`git clone`** this project onto your node (recommended) **or**, copy the necessary files over to your `/nodeuser/automation` directory. (*how to clone the git repo is out of scope of this documentation.*)
@@ -365,6 +378,9 @@ automation
 │   │   └── send_sms_email.py
 ├── configs
 │   │   ├── config.example.yaml
+├── logs
+│   │   ├── __init__.py
+│   │   ├── dag_count.log
 ```
 
 > You will need to rename the `config.example.yaml` file to `config.yaml` and update with correct [settings](#config).
