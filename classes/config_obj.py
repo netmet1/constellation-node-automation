@@ -7,6 +7,7 @@ class Config():
     def __init__(self,dag_args):
 
         self.dag_args = dag_args
+        self.path = os.path.dirname(__file__)
 
         self.pull_configuration()
         self.setup_variables()
@@ -17,7 +18,6 @@ class Config():
 
     def pull_configuration(self):
         self.config = {}
-        self.path = os.path.dirname(__file__)
         self.config_file = self.path.replace("classes","configs/config.yaml")
         with open(self.config_file,'r') as stream:
             try:
@@ -56,6 +56,7 @@ class Config():
 
     def setup_variables(self):
         self.action = self.dag_args.Action
+        self.dag_log_file = self.path.replace("classes","dag_count.log")
         self.mms_email_recipients = self.config['email']['mms_recipients']
         self.email = self.config['email']['gmail_acct']
         self.token = self.config['email']['gmail_token']

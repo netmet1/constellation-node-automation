@@ -28,7 +28,7 @@ class CreateReport():
         dag_dict = {}
         usd_dict = {}
                 
-        f = open(f"/{self.config.username}/automation/dag_count.log","r")
+        f = open(self.config.dag_log_file,"r")
         lines = f.readlines()
         last_line = lines[len(lines)-1]
 
