@@ -14,6 +14,7 @@
 1. [How to Configure](#config)
     1. [Parameter Description Table](#parms)
 1. [CRON setup](#cron)
+1. [Understanding the Log File](#logs)
 
 ---
 ### ABOUT THIS PROGRAM <a name="what"></a>
@@ -24,8 +25,8 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 
 #### This is a dynamic script that runs directly on your node to update you with your node's progress via:
     1. Text Message (mms or sms)
-    1. Email
-    1. Other
+    2. Email
+    3. Other
     
 #### This script will monitor your node's state and how it is running.  
 
@@ -314,7 +315,7 @@ Log into your node
 
 Create a dedicated directory for your automation script.
 
-If you decide **not** to do a `git clone`, you may not want or need to create the `automation` folder, as git will create a new directory `constellation-node-automation` which would suffice.
+If you decide to do a `git clone`, you may **not** want or need to create the `automation` folder, as git will create a new directory `constellation-node-automation` which would suffice.
 
 Without Git Clone, create the following:
 ```
@@ -505,4 +506,40 @@ You can run crontab scripts as follows:
 **line 3**: Five minutes past the 20:00 hour, run the script with the `report` argument.
 
 ---
+
+### Understanding the Log File <a name="logs">
+
+During program execution of an `alert` (`auto`)
+
+```
+nodeuser@constellation-node:~/automation## python3 automation alert
+```
+
+The system will log the results of the `alert` call into a file called `dag_count.log`. This file is located in the `/logs/` directory off the program's root.
+
+Clip of log file
+```
+[...]
+2021-07-01 09:45:00|300000|22314.9|0.074383
+2021-07-01 10:00:02|300121|22412.736159|0.074679
+[...]
+```
+
+---
+
+This file is **imperative** to the proper functionality of the automation program.  The end of the day report will review the daily activity that has been written to this file.  The program uses the start and stop times; configured in the `config.yaml` file, to calculate averages and predictive/assumptions.  
+
+The log file does not roll (future update to the code).
+
+The log file is only updated on an `alert`.
+
+| Column | Description |
+| :----: | :---------- |
+|   1    | The date/time the last `alert` was run. |
+|   2    | The number of rewards scrapped from a `dag metric`. |
+|   3    | The timestamped reward value in USD | 
+|   4    | The timestamped current $DAG price in USD |
+
+---
+
 hgtp://netmet

@@ -47,11 +47,16 @@ class Config():
             end = datetime.strptime("23:50", "%H:%M") # leave time for report feature
 
         self.start_time = start - timedelta(minutes=start.minute % 15)
-        self.report_time = end - timedelta(minutes=end.minute % 15)
-        self.end_time = self.report_time - timedelta(minutes=15)
+        self.end_time = end - timedelta(minutes=end.minute % 15)
+        self.report_time = self.end_time + timedelta(minutes=5)
 
         self.day_time_frame = f"{end.hour - start.hour} Hours {end.minute - start.minute} Minutes"
         self.day_run_hours = end.hour - start.hour
+
+        # All calculations are done, remove date from times
+        self.start_time = self.start_time.time()
+        self.end_time = self.end_time.time()
+        self.report_time = self.report_time.time()
 
 
     def setup_variables(self):
