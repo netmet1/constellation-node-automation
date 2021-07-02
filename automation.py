@@ -53,7 +53,6 @@ def node_checkup(config,send_report=False):
 def auto_run_schedule(config):
     now = datetime.now().strftime("%H:%M")
     now = datetime.now().strptime(now,"%H:%M").time()
-    error_count = 0  # next_run error checking.
 
     # If the auto param is called, this loop will never be exited, until the job is
     # killed or the ctl-c. This program is designed to run continuously. 
@@ -73,37 +72,34 @@ def auto_run_schedule(config):
                     for n in range(0,60,start_interval):
                         if now.minute == n:
                             # set time first to avoid synchronous distortion
-                            config.last_run = now 
+                            config.last_run = datetime.now()
                             node_checkup(config)
                             break
+
                     if config.last_run != "never":
                         break
                     sleep(2)
                 else:
                     break
 
+            # print(f"config.last_run: {config.last_run}")
+
             while True:
                 now = datetime.now().strftime("%H:%M")
                 now = datetime.now().strptime(now,"%H:%M").time()
+                next_run = config.last_run + timedelta(minutes=config.alert_interval)
+                next_run = next_run.strftime("%H:%M")
+                next_run = datetime.strptime(next_run,"%H:%M").time()
+                last_run = config.last_run.strftime("%H:%M")
+                last_run = datetime.strptime(last_run,"%H:%M").time()
 
-                try:
-                    next_run = config.last_run + timedelta(minutes=config.alert_interval)
-                except TypeError as Error:
-                    # We will allow an error to occur up to 10 times, before killing program
-                    # datetime sometimes unpredictably not record the timestamp.
-                    # We allow the error_count to accumulate to 10 before exit(1)
-                    error_count += 1
-                    if error_count > 10:
-                        print(Error)
-                else:
-                    error_count = 0 
-
-                if (now >= config.start_time and now <= config.report_time) and config.last_run < config.report_time: 
+                if (now >= config.start_time and now <= config.report_time) and last_run < config.report_time: 
                     if now == config.report_time:
-                        config.last_run = now 
+                        print("report time")
+                        config.last_run = datetime.now()
                         node_checkup(config,True)
                     elif now >= next_run:
-                        config.last_run = now 
+                        config.last_run = datetime.now()
                         node_checkup(config)
                     sleep(2)
                 else:
