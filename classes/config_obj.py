@@ -49,6 +49,7 @@ class Config():
         self.start_time = start - timedelta(minutes=start.minute % 15)
         self.end_time = end - timedelta(minutes=end.minute % 15)
         self.report_time = self.end_time + timedelta(minutes=5)
+        self.restart_time = self.start_time - timedelta(minutes=15)
 
         self.day_time_frame = f"{end.hour - start.hour} Hours {end.minute - start.minute} Minutes"
         self.day_run_hours = end.hour - start.hour
@@ -57,6 +58,7 @@ class Config():
         self.start_time = self.start_time.time()
         self.end_time = self.end_time.time()
         self.report_time = self.report_time.time()
+        self.restart_time = self.restart_time.time()
 
 
     def setup_variables(self):
@@ -161,6 +163,9 @@ class Config():
             if self.report_enabled:
                 self.report_estimates = [.5,1,5,10,100]
 
+
+if __name__ == "__main__":
+    print("This class module is not designed to be run independently, please refer to the documentation")
 
 
 
