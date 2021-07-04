@@ -454,7 +454,7 @@ configuration:
 | - | `node_count` | ***NOT INCLUDING THIS NODE***. <a name="node_count"></a> How many *other* nodes do you own that you want to include in the collateral calculations?  Note: Until the script couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. | int | `0` | if enabled  
 | **reports** | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the `estimates` list provided. |
 | - | `enabled` | Enable this feature. | boolean | `false` |  yes
-| - | `estimates` | $USD that you want to have the $DAG count translated into for the `end of day` report. *Note*: Make sure to leave the `-` in front of each list item.  You can have as many as you deem necessary, or you can remove list items that aren't wanted/needed. *The program will automatically remove estimates that are lower than the @report time USD/DAG price. | float | `.50`, `1`, `5`, `10`, `100` |  no 
+| - | `estimates` | $USD that you want to have the $DAG count translated into for the `end of day` report. *Note*: Make sure to leave the `-` in front of each list item.  You can have as many as you deem necessary, or you can remove list items that aren't wanted/needed. *The program will automatically remove estimates that are lower than the @report time USD/DAG price.* | float | `.50`, `1`, `5`, `10`, `100` |  no 
 
 > **Warning**: When entering in the `start_time` and `end_time` parameters, if `start_time` is after the `end_time` the system will revert to defaults (see above), instead of erroring out.
 
