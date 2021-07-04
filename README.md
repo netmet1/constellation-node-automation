@@ -470,7 +470,7 @@ Setup the crontab on your system to start the program at reboot.
 nodeuser@constellation-node:/# crontab -e
 ```
 
-Add the following to the bottom of the file.  see [usage section](#usage) for details.
+Add the following to the bottom of the file.  see [usage section](#usage) for details.  *Leave the `[...]` out, it is just an indication that other code is probably seen above (or below) the line you need to enter.*
 
 ```
 [...]
