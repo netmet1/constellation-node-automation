@@ -58,7 +58,6 @@ class Config():
         self.start_time = self.start_time.time()
         self.end_time = self.end_time.time()
         self.report_time = self.report_time.time()
-        self.restart_time = self.restart_time.time()
 
 
     def setup_variables(self):

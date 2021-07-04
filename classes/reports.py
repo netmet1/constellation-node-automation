@@ -69,6 +69,10 @@ class CreateReport():
         # counters = [1,52,26,13] # 13 hour day, 15min, 30min, 1hr
         self.config.report_estimates.insert(0,self.usd_dag_price)
 
+        # at report time if the price of the $DAG is gt the requested estimate
+        # remove that estimate from list because not needed.
+        self.config.report_estimates = [x for x in self.config.report_estimates if dag_usd_price < x]
+
         self.dag_metrics = [int(round((dags_for_day/x),0)) for x in counters]
         self.usd_metrics = [[round(((self.dag_metrics[3]*x)*y),2) for x in estimators] for y in self.config.report_estimates ]
 
