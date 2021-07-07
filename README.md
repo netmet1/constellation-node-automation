@@ -23,12 +23,12 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 
 **IT TAKES NO RESPONSIBILITY FOR RESULTS, OUTCOMES, AND ANYTHING ELSE THAT MIGHT CAUSE ISSUES.  USE AT YOUR OWN RISK**
 
-#### This is a dynamic script that runs directly on your node to update you with your node's progress via:
+#### This is a dynamic program that runs directly on your node to update you with your node's progress via:
     1. Text Message (mms or sms)
     2. Email
     3. Other
     
-#### This script will monitor your node's state and how it is running.  
+#### This program will monitor your node's state and how it is running.  
 
 > The following code is free to use as you would like, and you are welcome to contribute to it to make it better and more feature rich, as necessary.
 
@@ -64,7 +64,7 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 
 | command | Parameter | Optional |
 | ------- | :-------: | :------- | 
-| python3 automation.py | `alert` `report` `auto` | & |
+| python3 automation.py | `alert` `report` `auto` | -p, & |
 
 > `&` will run the system in the background until `ctl-c` performed.
 
@@ -122,6 +122,8 @@ python3 automation.py alert -p
 
 The system will log the entry and print the results to the console.  It will **not** send an email, mss, or alert.
 
+Example Output:
+
 ```
 MAINNET
 =========================
@@ -149,18 +151,18 @@ Port Range: 1034-65428
 Max Login Exceeded: 15
 ```
 
-> Results above are fictitious. `node_count` parameter set to `1` (details here: [node_count](#node_count)).
+> Results above are fictitious. `node_count` parameter set to `2` (details here: [node_count](#node_count)).
 
 <a name="alert_readout_key"></a>
 | KEY | Result Description |
 | ---: | :------ |
 | rewards | How many rewards you have earned so far. How much your collateral has increased since the last time the program ran (incremental). |
-| USD | What is your rewards worth in $USD.  How much has it changed `+` for increases, `()` for decreases. |
+| USD | What are your rewards worth in $USD.  How much has it changed `+` for increases, `()` for decreases. |
 | Splits | Based on the [splits](#config) setup in the configuration, it will show you `split1`/`split2` |
 | DAG Price | What is the current price, based on an API call in real time. (coingecko) |
 | DAG Price Change | What was the change since the last lookup `+` for increases, `()` for decreases. |
 | Collateral Nodes | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of Nodes you could possibly have. |
-| Collateral DAGs | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of DAGs you should have. | 
+| Collateral DAGs | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of DAGs you should accumulated. | 
 | Collateral USD | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the USD value of all DAGs both reward and collateral. | 
 | Next Node | How many DAGs you have to earn before you earn another Node based on collateral and rewards earned. |
 | Node Status | What is the status of your node, based on a `dag metrics`. |
@@ -282,13 +284,13 @@ YEARLY  : $90,720,000
 
 > Based on [config](#config) file that is set to $0.1, $0.5, $3, $5, $0 ,$50, $100
 
-> **NOTE: If the script doesn't run for the day, the results will (obviously) be incorrect or screwed.  It works off the `dag_count.log` file located in the root of the automation script folder.** *Log rolling is not enabled, so you will need to keep an eye on the file, until a new release adds the log rolling feature.*
+> **NOTE: If the program doesn't run for the day, the results will (obviously) be incorrect or screwed.  It works off the `dag_count.log` file located in the root of the automation program folder.** *Log rolling is not enabled, so you will need to keep an eye on the file, until a new release adds the log rolling feature.*
 
 ## INSTALLATION <a name="installation"></a>
 
 ### GMAIL SETUP <a name="gmail"></a>
 
-In order for this script to work properly, you will need to setup your Gmail account to allow incoming pushes from your Node.  
+In order for this program to work properly, you will need to setup your Gmail account to allow incoming pushes from your Node.  
 
 >This can also be done via Twilio; however, I will show how to do it via Gmail for the purposes of this README.   *A lot of us are still 9-5'ers and need a free avenue*.
 
@@ -331,7 +333,7 @@ Log into your node
 
 >**NOTE**: The username of the box will be either `root` or whatever username you setup on the Node.  This was done when you set yourself up to join the constellation network.  These instructions will use a user called `nodeuser`.
 
-Create a dedicated directory for your automation script.
+Create a dedicated directory for your automation program.
 
 If you decide to do a `git clone`, you may **not** want or need to create the `automation` folder, as git will create a new directory `constellation-node-automation` which would suffice.
 
@@ -409,9 +411,9 @@ automation
 ## CONFIGURATION <a name="config"></a>
 
 Rename `config.example.yaml` to `config.yaml`. Navigate to your `config.yaml` file and open with your favorite editor.  
-You **MUST** update this file in order for the script to function properly.
+You **MUST** update this file in order for the program to function properly.
 
->This is the **ONLY** file that you should be manipulating.  All other files in this program/script should be left alone.
+>This is the **ONLY** file that you should be manipulating.  All other files in this program should be left alone.
 
 ```
 configuration:
@@ -436,7 +438,7 @@ configuration:
     split2: 0.3
   collateral:
     enabled: true
-    node_count: 1 
+    node_count: 2
   report_estimates:
     - .1
     - .5
@@ -461,7 +463,7 @@ configuration:
 | - | `memory_swap_min` | Low end threshold before alerting that memory or swap is low.  The same decimal is used to check both.  Memory and Swap are independently checked. | decimal | `100000` | no
 | - | `security_check` | Do you want the system to count unauthorized access requests and ports. | boolean | `false` | no
 | **interval** |  | Setup when you want the alerts to start/stop being pushed to your `mms_email_recipients`. |
-| - | `start_time` | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the script to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
+| - | `start_time` | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the program to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
 | - | `end_time` | 24 hour clock notation - local time zone.  When do you want the alerting to stop each day? **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'20:00'` | no
 | - | `int_minutes` | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
 | **splits** | | This section is an optional configuration. When enabled, this feature will break out rewards/income into percentages between `split1` and `split2`.  When added together this should equal 1 (100%), otherwise calculations will not be accurate.  `Example`: You want to calculate how much of your income will be used for reinvestment (split1) verses taking profits (split2). |
@@ -470,7 +472,7 @@ configuration:
 | - | `split2` | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
 | **collateral** | | This section is an optional configuration. When enabled, this feature will calculate your current collateral as it relates to the 250K USD requirement for obtaining a new node. |
 | - | `enabled` | Enable this feature. | boolean | `false` | yes 
-| - | `node_count` | ***INCLUDING THIS NODE***. <a name="node_count"></a> How many nodes do you own that you want to include in the collateral calculations?  Note: Until the script couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. AKA: `enabled` with `node_count: 2` means you have 2 nodes all together including this node, that you want to count in your collateral calculations. | int | `1` | if enabled  
+| - | `node_count` | ***INCLUDING THIS NODE***. <a name="node_count"></a> How many nodes do you own that you want to include in the collateral calculations?  Note: Until the program couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. AKA: `enabled` with `node_count: 2` means you have 2 nodes all together including this node, that you want to count in your collateral calculations. | int | `1` | if enabled  
 | **reports** | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the `estimates` list provided. |
 | - | `enabled` | Enable this feature. | boolean | `false` |  yes
 | - | `estimates` | $USD that you want to have the $DAG count translated into for the `end of day` report. *Note*: Make sure to leave the `-` in front of each list item.  You can have as many as you deem necessary, or you can remove list items that aren't wanted/needed. *The program will automatically remove estimates that are lower than the @report time USD/DAG price.* | float | `.50`, `1`, `5`, `10`, `100` |  no 
@@ -512,7 +514,7 @@ nodeuser@constellation-node:~# nohup python3 automation.py auto &
 nodeuser@constellation-node:/# crontab -e
 ```
 
-You can run crontab scripts as follows:
+You can run crontab code as follows:
 
 > **note**: You are using `alert` and `report` verses `auto`.
 
@@ -523,11 +525,11 @@ You can run crontab scripts as follows:
 5          20   *       * *     /usr/bin/python3 /nodeuser/automation/automation.py report >> ~/cron.log 2>&1
 ```
 
-**line 1**:  Every 15 minutes between 07:00 and 19:45 of every day, every month, every year, run the script with the `alert` argument.
+**line 1**:  Every 15 minutes between 07:00 and 19:45 of every day, every month, every year, run the program with the `alert` argument.
 
-**line 2**: Start of the hour at 20:00 run the script once, every day, every month, every year... with the `alert` argument.
+**line 2**: Start of the hour at 20:00 run the program once, every day, every month, every year... with the `alert` argument.
 
-**line 3**: Five minutes past the 20:00 hour, run the script with the `report` argument.
+**line 3**: Five minutes past the 20:00 hour, run the program with the `report` argument.
 
 ---
 
