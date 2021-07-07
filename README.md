@@ -104,7 +104,7 @@ or run it in the background
 python3 automation.py auto &
 ```
 > **The `auto` command will execute the `alert` command every [n](#config) `int_minutes`, between the times configured in the [interval](#config) section of the configuration
-file.  At the `end_time`, the `report` command will be issued.  No alerts will be sent outside of the `start_time` and `end_time`.**
+file.  At 5 minutes past the `end_time`, the `report` command will be issued.  No alerts will be sent outside of the `start_time` and `end_time`.**
 
 #### Send out a manual alert
 
@@ -170,10 +170,10 @@ Max Login Exceeded: 15
 | Data Usage | How much space is available on your HD based on a systems command results. |
 | Memory | Will show `OK` or `LOW` based on the [configuration](#config) file setup. |
 | Swap | Will show `OK` or `LOW` based on the [configuration](#config) file setup. |
-| Ready Nodes | How many nodes are currently on your state channel and in `Ready`, based on `dag metrics`. |
+| Ready Nodes | How many nodes are currently on your state channel and in `Ready`, based on `dag nodes`. |
 | Inv Login Attempts | For the entire `auth.log` file, how many times has a user auth attempt begin denied. |
 | Port Range | What was the lowest port and highest port where invalid login attempts were logged.  **If this shows below `1024`, this may be cause for concern.** |
-| Max Login Exceeded | How many times has the system noticed and created an error log message, due to a possible brut force password attempt. (`auth.log`) |
+| Max Login Exceeded | How many times has the system noticed and created an error log message, due to a possible brut force password authentication attempts. (`auth.log`) |
 
 During the execution of an alert, if an error in the output of `Rewards` is non-integer. 
 
@@ -212,6 +212,8 @@ python3 automation.py report -p
 ```
 
 The system will print the report results to the console.  It will **not** send an email, mss, or alert.
+
+Example of End of Day Report.
 
 ```
 END OF DAY REPORT
@@ -369,6 +371,7 @@ If you get an error.
 ```
 sudo apt-get install python3-pip
 ```
+> Note: As of the current time, this program uses default Python libraries, so *pip* may not be needed, as of this version of the automation program.  Future releases may require *pip*, so installation is recommended. 
 
 ### IMPORTANT
 **The constellation installation is expected to be in the root of your node's user's home directory.**
@@ -379,7 +382,7 @@ nodeuser@constellation-node:~/constellation# pwd
 nodeuser@constellation-node:~/constellation#
 ```
 
-You cannot run a `report` until an `alert` has been run.
+> You cannot run a `report` until an `alert` has been run.
 
 **Ready to install program**
 
@@ -406,7 +409,7 @@ automation
 │   │   ├── dag_count.log
 ```
 
-> You will need to rename the `config.example.yaml` file to `config.yaml` and update with correct [settings](#config).
+> You will need to rename the `config.example.yaml` file to `config.yaml` and update with correct [settings](#config). Configuration setup is discussed in the next section.
 
 ## CONFIGURATION <a name="config"></a>
 
@@ -459,7 +462,7 @@ configuration:
 | - | `gmail_token` | Password you saved in the [App Password](#gmail) section. | - | - | yes
 | - | `mms_recipients` | Making sure you leave the `-` and indentation unchanged, add in your mobile number and/or email addresses where you want to send the reports.  If you only have `1` email, you can remove the extra list item(s).  If you have more than `2`, you can add in as many list entries (starting with a dash) as you like.  **NOTE**: *It is unknown how many requests will be accepted/allowed by Gmail or your mobile provider, so you may need to be cognizant of this when setting up complex lists of email recipients.* | - | - | yes
 | **constraints** |  | This section should only be modified by more advanced users.  It allows you to manipulate several program thresholds.|
-| - | `error_max` | How many errors should accumulate in the constellation log file before notifying in an alert.  **Note**: *The constellation log file is configured to roll, so the low error count is justified and only pertains to the current log.* | decimal | `20` | no
+| - | `error_max` | <a name="error_threshold"> How many errors should accumulate in the constellation log file before notifying in an alert.  **Note**: *The constellation log file is configured to roll, so the low error count is justified and only pertains to the current log.* | decimal | `20` | no
 | - | `memory_swap_min` | Low end threshold before alerting that memory or swap is low.  The same decimal is used to check both.  Memory and Swap are independently checked. | decimal | `100000` | no
 | - | `security_check` | Do you want the system to count unauthorized access requests and ports. | boolean | `false` | no
 | **interval** |  | Setup when you want the alerts to start/stop being pushed to your `mms_email_recipients`. |
