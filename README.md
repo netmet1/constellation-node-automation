@@ -161,7 +161,7 @@ Max Login Exceeded: 15
 | DAG Price Change | What was the change since the last lookup `+` for increases, `()` for decreases. |
 | Collateral Nodes | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of Nodes you could possibly have. |
 | Collateral DAGs | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of DAGs you should have. | 
-| Collateral USD | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of USD value. | 
+| Collateral USD | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the USD value of all DAGs both reward and collateral. | 
 | Next Node | How many DAGs you have to earn before you earn another Node based on collateral and rewards earned. |
 | Node Status | What is the status of your node, based on a `dag metrics`. |
 | Web Status | What is the status of your node's web interface, based on a `dag metrics`. |
