@@ -8,8 +8,10 @@ def retrieve_arguments():
     dag_parser.add_argument('Action',
                             metavar='action',
                             type=str,
-                            help="type of action the script will run (auto, alert, report, or silent)",
+                            help="Type of action the script will run:\n(auto, alert, report, or silent)\n\n",
                             default="alert")
+    dag_parser.add_argument("-p", "--print", help="print to the console instead of mms/sms, does not work with 'auto'.",
+                            action="store_true")
 
     return dag_parser.parse_args()
 
@@ -26,7 +28,4 @@ if __name__ == "__main__":
     if config.action == "auto":
         core.auto_run_schedule()
     else:
-        if config.action == "report":
-            core.node_checkup(True)
-        else:
-            core.node_checkup()
+        core.node_checkup()

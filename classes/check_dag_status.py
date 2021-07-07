@@ -50,14 +50,14 @@ class CheckDagStatus():
         self.simple_time = self.today.strftime("%H:%M")
         self.today = self.today.strftime("%Y-%m-%d %H:%M:%S")
         
-        self.create_report()
+        self.create_alert_report()
         self.prepare_results()
 
         if not self.error_flag:
             self.calculate_dag_to_usd()
             self.calculate_collateral()
 
-        self.create_report_msg()
+        self.create_alert_msg()
 
         if self.config.silence_writelog is False and self.error_flag is False:
             self.writeout_stats_logs()
@@ -98,7 +98,7 @@ class CheckDagStatus():
         self.results.append(f"Max Login Exceeded: {max_auth_attempt}")
 
 
-    def create_report(self):
+    def create_alert_report(self):
         for command in self.command_list:
             if "addline" in command:
                 self.results.append("=========================")
@@ -199,13 +199,15 @@ class CheckDagStatus():
         self.results = new_results
 
 
-    def create_report_msg(self):
+    def create_alert_msg(self):
         self.report_body = "MAINNET\n"
         for line in self.results:
             self.report_body = self.report_body+line+"\n"
             if line.find("Rewards") > -1:
                 self.report_body = f"{self.report_body}{self.usd_str}{self.col_str}\n"
-        # print(self.report_body) # debug
+
+        if self.config.local is True:
+            print(f"\n{self.report_body}\n")
 
 
     def calculate_dag_to_usd(self):
@@ -268,8 +270,13 @@ class CheckDagStatus():
             if dag_b4_next == 0:
                 dag_b4_next = self.current_constellation_collateral
 
+            print(collateral)
+            print(self.current_price_usd)
+            usd_collateral_value = collateral * self.usd_dag_price
+
             self.col_str = f"\nCollateral Nodes: {'{:,}'.format(possible_nodes)}\n"
             self.col_str += f"Collateral DAGs: {'{:,}'.format(collateral)}\n"
+            self.col_str += f"Collateral USD: {'${:,.2f}'.format(usd_collateral_value)}\n"
             self.col_str += f"Next Node: {'{:,}'.format(dag_b4_next)}"
 
 

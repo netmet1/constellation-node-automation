@@ -29,6 +29,7 @@ class SendAMessage():
         # check what we need to do
         if self.action == "normal" or self.action == "error":
             self.subject = "CONSTELLATION DARKSTAR"
+        # come back to re-enable this later...
         # if self.action == "error":
         #     self.subject = "ERROR CONST DARSTAR"
             

@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 from time import sleep
+from pprint import pprint
 
 from classes.error_log_check import ErrorLogCheck 
 from classes.check_dag_status import CheckDagStatus
 from classes.send_sms_email import SendAMessage
 from classes.reports import CreateReport
+from classes.config_obj import Config
 
 class Core():
 
@@ -12,13 +14,7 @@ class Core():
         self.config = config
 
 
-    def node_checkup(self,send_report=False):
-        if send_report:
-            self.config.send_report = True
-            self.config.silence_writelog = True
-        else:
-            self.config.send_report = False
-            self.config.silence_writelog = False
+    def node_checkup(self):
 
         checkForErrors = ErrorLogCheck(self.config)
         buildReport = CheckDagStatus(self.config)
@@ -30,7 +26,7 @@ class Core():
             msg = buildReport.report_body
             msg_action = "normal"
 
-        if self.config.action == "report" or send_report is True:
+        if self.config.create_report is True:
             if self.config.report_enabled is True:
                 createReport = CreateReport("daily", buildReport.usd_dag_price, self.config)
                 msg = createReport.report_str 
@@ -73,11 +69,10 @@ class Core():
                     else:
                         break
 
-                # print(f"self.config.last_run: {self.config.last_run}")
-
                 while True:
                     now = datetime.now().strftime("%H:%M")
                     now = datetime.now().strptime(now,"%H:%M").time()
+
                     next_run = self.config.last_run + timedelta(minutes=self.config.alert_interval)
                     next_run = next_run.strftime("%H:%M")
                     next_run = datetime.strptime(next_run,"%H:%M").time()
@@ -86,17 +81,28 @@ class Core():
 
                     if (now >= self.config.start_time and now <= self.config.report_time) and last_run < self.config.report_time: 
                         if now == self.config.report_time:
-                            print("report time")
                             self.config.last_run = datetime.now()
-                            self.node_checkup(True)
+                            self.config.create_report = True
+                            self.config.silence_writelog = True
+                            self.node_checkup()
                         elif now >= next_run:
                             self.config.last_run = datetime.now()
+                            self.config.create_report = False
+                            self.config.silence_writelog = False
                             self.node_checkup()
+
+                            if self.config.reload_needed():
+                                # rebuild configuration because user modified
+                                self.config = Config(self.config.dag_args)
+                                break
                         sleep(2)
                     else:
                         break
             else:
-                self.config.last_run = self.config.restart_time
+                # force config back to alert settings to avoid reload_needed loop
+                self.config = Config(self.config.dag_args) 
+                # reset the last_run for next day (time slots)
+                self.config.last_run = "never"
                 now = datetime.now().strftime("%H:%M")
                 now = datetime.now().strptime(now,"%H:%M").time()
                 sleep(2)

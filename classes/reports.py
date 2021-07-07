@@ -63,15 +63,15 @@ class CreateReport():
         # usd_for_day = usd_dict["last"] - usd_dict["first"]
         dag_change = '{:.8f}'.format(self.dag_usd_dict["last"] - self.dag_usd_dict["first"])
 
+        # counters = [1,52,26,13] # 13 hour day, 15min, 30min, 1hr
         counters = [1, self.config.day_run_hours*4, self.config.day_run_hours*2, self.config.day_run_hours]
         estimators = [24,720,8640] # 1 day, 1 month, 1 year
-
-        # counters = [1,52,26,13] # 13 hour day, 15min, 30min, 1hr
-        self.config.report_estimates.insert(0,self.usd_dag_price)
 
         # at report time if the price of the $DAG is gt the requested estimate
         # remove that estimate from list because not needed.
         self.config.report_estimates = [x for x in self.config.report_estimates if dag_usd_price < x]
+        # add in current price @ time of report run.
+        self.config.report_estimates.insert(0,self.usd_dag_price)
 
         self.dag_metrics = [int(round((dags_for_day/x),0)) for x in counters]
         self.usd_metrics = [[round(((self.dag_metrics[3]*x)*y),2) for x in estimators] for y in self.config.report_estimates ]
@@ -87,6 +87,10 @@ class CreateReport():
             cont_str += f"YEARLY  : ${metric[2]:,}\n"
 
         self.report_str += cont_str
+
+        if self.config.local is True:
+            print(f"\n{self.report_str}\n")
+
 
     
     def build_string(self,dag_change):

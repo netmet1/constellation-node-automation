@@ -58,6 +58,7 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 - Reinvestment to Income Splits
 - Earned Node Counter
 - End of Day Summary with passive earnings and estimations
+- Local Print Feature
 
 ## USAGE <a name="usage"></a>
 
@@ -77,17 +78,18 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 #### Help Usage
 
 ```
-nodeuser@constellation-node:~/automation# python3 automation.py --help
-usage: automation.py [-h] action
+usage: automation.py [-h] [-p] action
 
 dag alerting script
 
 positional arguments:
-  action      type of action the script will run (auto, alert, report, or
-              silent)
+  action       Type of action the script will run: (auto, alert, report, or
+               silent)
 
 optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help   show this help message and exit
+  -p, --print  print to the console instead of mms/sms, does not work with
+               'auto'.
 ```
 
 #### Start the program to run on a schedule via the [configuration](#config) parameters (start/stop/interval)
@@ -112,6 +114,14 @@ python3 automation.py alert
 
 MMS (SMS) message on the phone or email will be received, upon execution completion. 
 
+#### Print to the CLI
+
+```
+python3 automation.py alert -p
+```
+
+The system will log the entry and print the results to the console.  It will **not** send an email, mss, or alert.
+
 ```
 MAINNET
 =========================
@@ -123,6 +133,7 @@ DAG @ $0.058038
 +0.0000446
 Collateral Nodes: 2.200000
 Collateral DAGs: 550,000
+Collateral USD$: $31,920.90
 Next Node: 200,000
 =========================
 Node Status : online
@@ -150,6 +161,7 @@ Max Login Exceeded: 15
 | DAG Price Change | What was the change since the last lookup `+` for increases, `()` for decreases. |
 | Collateral Nodes | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of Nodes you could possibly have. |
 | Collateral DAGs | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of DAGs you should have. | 
+| Collateral USD | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of USD value. | 
 | Next Node | How many DAGs you have to earn before you earn another Node based on collateral and rewards earned. |
 | Node Status | What is the status of your node, based on a `dag metrics`. |
 | Web Status | What is the status of your node's web interface, based on a `dag metrics`. |
@@ -192,6 +204,12 @@ python3 automation.py report
 ```
 
 MMS message on the phone or email will be received
+
+```
+python3 automation.py report -p
+```
+
+The system will print the report results to the console.  It will **not** send an email, mss, or alert.
 
 ```
 END OF DAY REPORT
@@ -374,6 +392,7 @@ automation
 ├── classes
 │   │   ├── __init__.py
 │   │   ├── check_dag_status.py
+│   │   ├── config_obj.py
 │   │   ├── core.py
 │   │   ├── error_log_check.py
 │   │   ├── reports.py
@@ -451,12 +470,14 @@ configuration:
 | - | `split2` | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
 | **collateral** | | This section is an optional configuration. When enabled, this feature will calculate your current collateral as it relates to the 250K USD requirement for obtaining a new node. |
 | - | `enabled` | Enable this feature. | boolean | `false` | yes 
-| - | `node_count` | ***NOT INCLUDING THIS NODE***. <a name="node_count"></a> How many *other* nodes do you own that you want to include in the collateral calculations?  Note: Until the script couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. | int | `0` | if enabled  
+| - | `node_count` | ***INCLUDING THIS NODE***. <a name="node_count"></a> How many nodes do you own that you want to include in the collateral calculations?  Note: Until the script couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. AKA: `enabled` with `node_count: 2` means you have 2 nodes all together including this node, that you want to count in your collateral calculations. | int | `1` | if enabled  
 | **reports** | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the `estimates` list provided. |
 | - | `enabled` | Enable this feature. | boolean | `false` |  yes
 | - | `estimates` | $USD that you want to have the $DAG count translated into for the `end of day` report. *Note*: Make sure to leave the `-` in front of each list item.  You can have as many as you deem necessary, or you can remove list items that aren't wanted/needed. *The program will automatically remove estimates that are lower than the @report time USD/DAG price.* | float | `.50`, `1`, `5`, `10`, `100` |  no 
 
 > **Warning**: When entering in the `start_time` and `end_time` parameters, if `start_time` is after the `end_time` the system will revert to defaults (see above), instead of erroring out.
+
+> The program will check if the `config.yaml` has been updated by the user every `int_minutes`.  Therefore, any changes will **not** take affect until the next `int_minutes` interval is reached.
 
 #### SETUP CRON JOB <a name="cron"></a>
 
@@ -470,7 +491,9 @@ Setup the crontab on your system to start the program at reboot.
 nodeuser@constellation-node:/# crontab -e
 ```
 
-Add the following to the bottom of the file.  see [usage section](#usage) for details.  *Leave the `[...]` out, it is just an indication that other code is probably seen above (or below) the line you need to enter.*
+Add the following to the bottom of the file.  see [usage section](#usage) for details.  
+
+> Leave the `[...]` out, it is just an indication that other code is probably seen above (or below) the line you need to enter.
 
 ```
 [...]
