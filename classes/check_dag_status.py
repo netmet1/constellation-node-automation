@@ -270,8 +270,6 @@ class CheckDagStatus():
             if dag_b4_next == 0:
                 dag_b4_next = self.current_constellation_collateral
 
-            print(collateral)
-            print(self.current_price_usd)
             usd_collateral_value = collateral * self.usd_dag_price
 
             self.col_str = f"\nCollateral Nodes: {'{:,}'.format(possible_nodes)}\n"
