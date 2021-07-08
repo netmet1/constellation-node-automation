@@ -89,12 +89,13 @@ class Core():
                             self.config.last_run = datetime.now()
                             self.config.create_report = False
                             self.config.silence_writelog = False
-                            self.node_checkup()
 
                             if self.config.reload_needed():
                                 # rebuild configuration because user modified
                                 self.config = Config(self.config.dag_args)
                                 break
+                                
+                            self.node_checkup()
                         sleep(2)
                     else:
                         break
