@@ -27,9 +27,9 @@ class CheckDagStatus():
             "/usr/local/bin/dag metrics | grep 'State'",
             "df -h | grep 'vda1 ' | awk '{print \"Data usage: \"$5\" of \"$3}'",
             "free | awk '{print $4}'",
+            "uptime | awk '{print $3\" \"$12}'",
             "/usr/local/bin/dag nodes --mainnet | grep 'Ready' | wc -l | awk '{print \"Ready Nodes: \"$0}'",
-            "addline_security",
-            "uptime | awk \"{print $3' '$12}\""
+            "addline_security"
         ]
 
         self.report_body = ""
@@ -193,13 +193,14 @@ class CheckDagStatus():
 
     def parse_uptime_load(self):
         details = self.current_result.split(" ")
+        details[1] = self.cleaner(details[1],"spaces")
 
         if int(details[0]) > self.config.uptime:
             usage_line = f"Days Up: WARN@{details[0]}"
         else:
             usage_line = f"Days up: OK@{details[0]}"
 
-        if float(details[1]) > self.config.load:
+        if float(details[1]) > float(self.config.load):
             usage_line2 = f"15M Load: WARN@{details[1]}"
         else:
             usage_line2 = f"15M Load: OK@{details[1]}"

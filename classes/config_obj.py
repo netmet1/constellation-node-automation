@@ -170,10 +170,12 @@ class Config():
         try:
             float(self.load)
         except:
-            self.load = .4
+            self.load = 40
         else:
             if self.load == -1 or self.load > 1:
-                self.load = .4
+                self.load = 40
+        finally:
+            self.load = float(self.load)
  
         try:
             float(self.split1)

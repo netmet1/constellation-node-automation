@@ -25,7 +25,7 @@ configuration:
     memory_swap_min: 200000
     security_check: true
     uptime_threshold: 30
-    load_threshold: 0.4
+    load_threshold: 40
   intervals:
     start_time: '07:00'
     end_time: '20:00'

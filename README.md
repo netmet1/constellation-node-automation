@@ -34,7 +34,7 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 
 ---
 
-##### Version: 0.1b
+##### Version: 0.2b
 
 ---
 ### FEATURES <a name="features"></a>
@@ -50,6 +50,8 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 - Node State
 - Data Usage
 - Memory and Swap Warning
+- Uptime Warning
+- Load Warning
 - Security Checks
     - Unauthorized login attempts
     - Login attempt port ranges
@@ -144,6 +146,8 @@ Node State : Ready
 Data usage: 12% of 18G
 Memory: LOW@368,348
 Swap: OK@7,713,020
+Days up: OK@12
+15M Load: OK@2.00
 Ready Nodes: 81
 =========================
 Inv Login Attempts: 683
@@ -168,8 +172,10 @@ Max Login Exceeded: 15
 | Node Status | What is the status of your node, based on a `dag metrics`. |
 | Web Status | What is the status of your node's web interface, based on a `dag metrics`. |
 | Data Usage | How much space is available on your HD based on a systems command results. |
-| Memory | Will show `OK` or `LOW` based on the [configuration](#config) file setup. |
-| Swap | Will show `OK` or `LOW` based on the [configuration](#config) file setup. |
+| Memory | Will show memory allocation of `OK` or `LOW` based on the [configuration](#config) file setup. |
+| Swap | Will show swap allocation of `OK` or `LOW` based on the [configuration](#config) file setup. |
+| Days Up | Will show uptime in `days`  for the server with `OK` or `WARN` based on the [configuration](#config) file setup. |
+| 15M Load | Will show the current 15M CPU load statistics with `OK` or `WARN` based on the [configuration](#config) file setup. |
 | Ready Nodes | How many nodes are currently on your state channel and in `Ready`, based on `dag nodes`. |
 | Inv Login Attempts | For the entire `auth.log` file, how many times has a user auth attempt begin denied. |
 | Port Range | What was the lowest port and highest port where invalid login attempts were logged.  **If this shows below `1024`, this may be cause for concern.** |
@@ -430,6 +436,8 @@ configuration:
   constraints:
     error_max: 20
     memory_swap_min: 200000
+    uptime_threshold: 30
+    load_threshold: 40
   intervals:
     start_time: '07:00'
     end_time: '20:00'
@@ -465,7 +473,9 @@ configuration:
 | - | `error_max` | <a name="error_threshold"> How many errors should accumulate in the constellation log file before notifying in an alert.  **Note**: *The constellation log file is configured to roll, so the low error count is justified and only pertains to the current log.* | decimal | `20` | no
 | - | `memory_swap_min` | Low end threshold before alerting that memory or swap is low.  The same decimal is used to check both.  Memory and Swap are independently checked. | decimal | `100000` | no
 | - | `security_check` | Do you want the system to count unauthorized access requests and ports. | boolean | `false` | no
-| **interval** |  | Setup when you want the alerts to start/stop being pushed to your `mms_email_recipients`. |
+| - | `uptime_threshold` | Number of days of uptime the server/node/instance has been running.  *Recommendation is to reboot after monthly patches* | int | `30` | no
+| - | `load_threshold` | Percentage of CPU load you want to warn against when threshold is exceeded. *interger represented as a percentage* | int | `40` | no
+| **intervals** |  | Setup when you want the alerts to start/stop being pushed to your `mms_email_recipients`. |
 | - | `start_time` | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the program to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
 | - | `end_time` | 24 hour clock notation - local time zone.  When do you want the alerting to stop each day? **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'20:00'` | no
 | - | `int_minutes` | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
