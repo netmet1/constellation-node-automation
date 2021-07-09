@@ -28,7 +28,8 @@ class CheckDagStatus():
             "df -h | grep 'vda1 ' | awk '{print \"Data usage: \"$5\" of \"$3}'",
             "free | awk '{print $4}'",
             "/usr/local/bin/dag nodes --mainnet | grep 'Ready' | wc -l | awk '{print \"Ready Nodes: \"$0}'",
-            "addline_security"
+            "addline_security",
+            "uptime | awk \"{print $3' '$12}\""
         ]
 
         self.report_body = ""
@@ -131,6 +132,8 @@ class CheckDagStatus():
                     self.current_result += f"Rewards: {format_update} {self.delta_dags}"
                 if "free" in command:
                     self.parse_memory()
+                if "uptime" in command:
+                    self.parse_uptime_load()
                 if self.current_result is not "":
                     self.results.append(self.current_result)
 
@@ -186,6 +189,12 @@ class CheckDagStatus():
                     current_result += f"\nSwap: OK@{'{:,}'.format(int(useage))}\n"
 
         self.current_result = current_result
+
+
+    def parse_uptime_load(self):
+        details = self.current_result.split(" ")
+        usage_line = f"Day Up: {details[0]}"
+
 
 
     def prepare_results(self):
