@@ -436,13 +436,13 @@ configuration:
   constraints:
     error_max: 20
     memory_swap_min: 200000
+    security_check: true
     uptime_threshold: 30
     load_threshold: 40
   intervals:
     start_time: '07:00'
     end_time: '20:00'
     int_minutes: 15
-    security_check: true
   splits:
     enabled: true
     split1: 0.7
