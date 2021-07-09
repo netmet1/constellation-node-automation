@@ -193,8 +193,18 @@ class CheckDagStatus():
 
     def parse_uptime_load(self):
         details = self.current_result.split(" ")
-        usage_line = f"Day Up: {details[0]}"
 
+        if int(details[0]) > self.config.uptime:
+            usage_line = f"Days Up: WARN@{details[0]}"
+        else:
+            usage_line = f"Days up: OK@{details[0]}"
+
+        if float(details[1]) > self.config.load:
+            usage_line2 = f"15M Load: WARN@{details[1]}"
+        else:
+            usage_line2 = f"15M Load: OK@{details[1]}"
+
+        self.current_result = f"{usage_line}\n{usage_line2}"
 
 
     def prepare_results(self):
