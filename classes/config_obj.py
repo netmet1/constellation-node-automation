@@ -166,6 +166,8 @@ class Config():
         else:
             if self.uptime == -1:
                 self.uptime = 30
+        finally:
+            self.uptime = int(self.uptime)
  
         try:
             float(self.load)
