@@ -30,7 +30,6 @@ configuration:
     start_time: '07:00'
     end_time: '20:00'
     int_minutes: 15
-    security_check: true
   splits:
     enabled: true
     split1: 0.7
