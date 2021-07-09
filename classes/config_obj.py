@@ -81,6 +81,8 @@ class Config():
         self.token = self.config['email']['gmail_token']
         self.error_max = self.config['constraints']['error_max']
         self.mem_swap_min = self.config['constraints']['memory_swap_min']
+        self.uptime = self.config['constraints']['uptime_threshold']
+        self.load = self.config['constraints']['load_threshold']        
         self.username = self.config['email']['node_username']
         self.split1 = self.config['splits']['split1']
         self.split2 = self.config['splits']['split2']
@@ -157,6 +159,26 @@ class Config():
             elif self.alert_interval < 10:
                 self.alert_interval = 10
 
+        try:
+            int(self.uptime)
+        except:
+            self.uptime = 30
+        else:
+            if self.uptime == -1:
+                self.uptime = 30
+        finally:
+            self.uptime = int(self.uptime)
+ 
+        try:
+            float(self.load)
+        except:
+            self.load = 40
+        else:
+            if self.load == -1 or self.load > 1:
+                self.load = 40
+        finally:
+            self.load = float(self.load)
+ 
         try:
             float(self.split1)
         except:
