@@ -194,6 +194,7 @@ class CheckDagStatus():
     def parse_uptime_load(self):
         details = self.current_result.split(" ")
         details[1] = self.cleaner(details[1],"spaces")
+        details[1] = self.cleaner(details[1],"commas")
 
         if int(details[0]) > self.config.uptime:
             usage_line = f"Days Up: WARN@{details[0]}"
