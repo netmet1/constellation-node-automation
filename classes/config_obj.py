@@ -71,6 +71,9 @@ class Config():
         self.end_time = self.end_time.time()
         self.report_time = self.report_time.time()
 
+        # Log parmaters
+        self.log_start = self.dag_args.search_start
+        self.log_end = self.dag_args.search_end
 
     def setup_variables(self):
         self.action = self.dag_args.Action
