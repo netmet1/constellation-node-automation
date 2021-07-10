@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime, timedelta
 from time import sleep
+from classes.send_sms_email import SendAMessage
 
 class Logger():
 
@@ -15,6 +16,7 @@ class Logger():
 
     def process_request(self):
         self.verify_config()
+        dag_found = None
         current_date = self.config.log_start
 
         f = open(self.config.dag_log_file, "r")
@@ -37,9 +39,18 @@ class Logger():
 
 
     def format_results(self):
-        pass
+        # 2021-07-10 12:45:02|744927|123619.14579600001|0.165948
+        log_msg = ""
+        for line in self.dag_log_list:
+            line = line.split("|")
+            log_msg += f"Date: {line[0]}\n"
+            log_msg += f"DAG WALLET AMT: {'{:,}'.format(int(line[1]))}\n"
+            log_msg += f"USD VALUE {'${:,.2f}'.format(float(line[2]))}\n"
+            log_msg += f"DAG VALUE {'${:,.2f}'.format(float(line[3]))}\n===\n"
+            
+        SendAMessage("normal",log_msg,self.config)
     
-    
+
     def verify_config(self):
         self.test_date(self.config.log_start)
         if self.config.log_end is not None:
