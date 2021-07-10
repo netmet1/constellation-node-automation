@@ -39,7 +39,6 @@ class Logger():
 
 
     def format_results(self):
-        # 2021-07-10 12:45:02|744927|123619.14579600001|0.165948
         log_msg = ""
         for line in self.dag_log_list:
             line = line.split("|")
