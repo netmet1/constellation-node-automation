@@ -65,3 +65,7 @@ cached/
 # We don't want to push any precompiled Python files to be pushed either.
 module/__pycache__/
 module/*.pyc
+
+# python cache files
+/__pycache__/
+classes/__pycache__/

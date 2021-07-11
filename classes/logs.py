@@ -45,7 +45,7 @@ class Logger():
     def format_results(self):
         # clean data
         self.dag_log_list = [x for x in self.dag_log_list if x != None]
-        
+
         if not self.dag_log_list:
             self.log_msg = "No results Found...\n"
             self.log_msg += "Make sure format is correct:  YYYY-MM-DD\n"
@@ -99,7 +99,7 @@ class Logger():
 
 
     def setup_csv(self):
-        self.header = ['date','dag_accumulation','usd_value','dag_in_usd']
+        self.header = ['date','dag_end_balance','usd_value','dag_in_usd']
         self.data = []
 
         file_name = f"{self.config.current_date}_search_{self.config.log_start}"
