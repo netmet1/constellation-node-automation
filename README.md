@@ -443,12 +443,14 @@ You **MUST** update this file in order for the program to function properly.
 ```
 configuration:
   email:
+    node_username: root
     gmail_acct: gmail_source_email@gmail.com
     gmail_token: gmail_app_password
     mms_recipients:
         - 111111111@provider.gateway.net
         - 222222222@provider.gateway.net
         - whoever@whoever.com
+    node_name: My_Node
   constraints:
     error_max: 20
     memory_swap_min: 200000
