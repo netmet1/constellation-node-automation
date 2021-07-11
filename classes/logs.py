@@ -65,7 +65,9 @@ class Logger():
                 self.log_msg += f"Date: {line[0]}\n"
                 self.log_msg += f"DAG WALLET AMT: {'{:,}'.format(int(line[1]))}\n"
                 self.log_msg += f"USD VALUE {'${:,.2f}'.format(float(line[2]))}\n"
-                self.log_msg += f"DAG VALUE {'${:,.2f}'.format(float(line[3]))}\n===\n"
+                if len(line) > 3:  # legacy error check per 2021-06-11 before price added to log
+                    self.log_msg += f"DAG VALUE {'${:,.2f}'.format(float(line[3]))}\n"
+                self.log_msg += "===\n"
     
 
     def send_results(self):
