@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 import os
 import yaml
+import re
 
 class Config():
 
     def __init__(self,dag_args):
-
         self.dag_args = dag_args
         self.path = os.path.dirname(__file__)
         
@@ -16,6 +16,7 @@ class Config():
         self.setup_flags()
         self.config_default_check()
         self.setup_dates_times()
+
 
     def reload_needed(self):
         new_config = self.pull_configuration()
@@ -71,11 +72,26 @@ class Config():
         self.end_time = self.end_time.time()
         self.report_time = self.report_time.time()
 
+        # Final Test of Log Dates
+        if self.action == "log":
+            try:
+                datetime.strptime(self.log_start,"%Y-%m-%d")
+            except:
+                print("invalid log start time, please see README or --help")
+                exit(1)
+            if self.log_end:
+                try:
+                    datetime.strptime(self.log_end,"%Y-%m-%d")
+                except:
+                    print("invalid log end time, please README or see --help")
+                    exit(1)             
+
 
     def setup_variables(self):
         self.action = self.dag_args.Action
         self.last_run = "never"
         self.dag_log_file = self.path.replace("classes","logs/dag_count.log")
+        self.dag_log_file_path = self.path.replace("classes","logs/")        
         self.mms_email_recipients = self.config['email']['mms_recipients']
         self.email = self.config['email']['gmail_acct']
         self.token = self.config['email']['gmail_token']
@@ -84,6 +100,7 @@ class Config():
         self.uptime = self.config['constraints']['uptime_threshold']
         self.load = self.config['constraints']['load_threshold']        
         self.username = self.config['email']['node_username']
+        self.node_name = self.config['email']['node_name']
         self.split1 = self.config['splits']['split1']
         self.split2 = self.config['splits']['split2']
         self.collateral_nodes = self.config['collateral']['node_count']
@@ -93,6 +110,12 @@ class Config():
         self.silence_writelog = False
         self.local = False
         self.create_report = False
+
+        # Log parmaters
+        self.csv = self.dag_args.csv
+        self.log_start = self.dag_args.search_start
+        self.log_end = self.dag_args.search_end
+
 
     def setup_flags(self):
         if self.action == "silent":
@@ -118,6 +141,9 @@ class Config():
                 self.local = False
             self.create_report = False
             self.silence_writelog = False
+        elif self.action == "log":
+            if self.dag_args.print is True:
+                self.local = True
         else: 
             # self.action is auto
             self.silence_email = False
@@ -218,6 +244,20 @@ class Config():
         if not isinstance(self.report_estimates,list): 
             if self.report_enabled:
                 self.report_estimates = [.5,1,5,10,100]
+
+        if self.username == "":
+            self.username = "root"
+        if self.node_name == "":
+            self.node_name = "MY_NODE_NAME_HERE"
+
+        if self.csv:
+            if not re.match("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", self.csv):
+                print("invalid CSV email detected, please see README or --help")
+                exit(1)
+            else:
+                if not self.log_start:
+                    print("CSV request without date range, please see README  or --help")
+                    exit(1)
 
 
 if __name__ == "__main__":

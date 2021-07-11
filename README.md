@@ -15,6 +15,7 @@
     1. [Parameter Description Table](#parms)
 1. [CRON setup](#cron)
 1. [Understanding the Log File](#logs)
+1. [Sending Log Reports for Taxes or Documentation](#logs_report)
 
 ---
 ### ABOUT THIS PROGRAM <a name="what"></a>
@@ -80,18 +81,33 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 #### Help Usage
 
 ```
-usage: automation.py [-h] [-p] action
+usage: automation.py [-h] [-p] [-c EMAIL] [-ss START_DATE] [-se END_DATE]
+                     ACTION
 
 dag alerting script
 
 positional arguments:
-  action       Type of action the script will run: (auto, alert, report, or
-               silent)
+  ACTION                Type of action the script will run: (auto, alert,
+                        report, silent or log). Search dates (currently) only
+                        work with the "log" action.
 
 optional arguments:
-  -h, --help   show this help message and exit
-  -p, --print  print to the console instead of mms/sms, does not work with
-               'auto'.
+  -h, --help            show this help message and exit
+  -p, --print           print to the console instead of mms/sms, does not work
+                        with 'auto'.
+  -c EMAIL, --csv EMAIL
+                        For use with the 'log' action only. Program will send
+                        a csv formated file with search results to the
+                        specified email.
+  -ss START_DATE, --search_start START_DATE
+                        For use with 'log' action. The start date search log
+                        files for DAG balance at a certain date in time.
+                        Format: YYYY-MM-DD. This will supply the last entry
+                        recorded for the specified date. If search_end is not
+                        specified a single date will be searched.
+  -se END_DATE, --search_end END_DATE
+                        For use with 'log' action. The end date to search log
+                        files. Format: YYYY-MM-DD
 ```
 
 #### Start the program to run on a schedule via the [configuration](#config) parameters (start/stop/interval)
@@ -175,7 +191,7 @@ Max Login Exceeded: 15
 | Memory | Will show memory allocation of `OK` or `LOW` based on the [configuration](#config) file setup. |
 | Swap | Will show swap allocation of `OK` or `LOW` based on the [configuration](#config) file setup. |
 | Days Up | Will show uptime in `days`  for the server with `OK` or `WARN` based on the [configuration](#config) file setup. |
-| 15M Load | Will show the current 15M CPU load statistics with `OK` or `WARN` based on the [configuration](#config) file setup. |
+| 15M Load | Will show the current 15 minute average CPU load statistics with `OK` or `WARN` based on the [configuration](#config) file setup. |
 | Ready Nodes | How many nodes are currently on your state channel and in `Ready`, based on `dag nodes`. |
 | Inv Login Attempts | For the entire `auth.log` file, how many times has a user auth attempt begin denied. |
 | Port Range | What was the lowest port and highest port where invalid login attempts were logged.  **If this shows below `1024`, this may be cause for concern.** |
@@ -578,6 +594,51 @@ The log file is only updated on an `alert`.
 |   2    | The number of rewards scrapped from a `dag metric`. |
 |   3    | The timestamped reward value in USD | 
 |   4    | The timestamped current $DAG price in USD |
+
+---
+
+### Creating Log Reports <a name="logs_report">
+
+From the command line of the node, you can request $DAG `log` reports, by issuing the `log` action followed by date or date range.
+
+The report offers a few options
+
+Print a report for a single day based on a start time only, send to MMS alerting group.
+
+```
+python3 automation.py log -ss 2021-07-11
+```
+
+Print a report for a date range based on a start time and end time, send to MMS alerting group.
+
+```
+python3 automation.py log -ss 2021-07-01 --se 2021-07-11
+```
+
+Print a report and CSV attachment for a date range based on a start time, send to **specific email**.
+
+```
+python3 automation.py log -c someone@somewhere.com -ss 2021-07-01 
+```
+
+Print a report and CSV attachment for a date range based on a start time and end time, send to **specific email**.
+
+```
+python3 automation.py log -c someone@somewhere.com -ss 2021-07-01 --se 2021-07-11
+```
+
+Print a report for a single day based on a start time only, send to CLI (console).
+
+```
+python3 automation.py log -ss 2021-07-11 -p
+```
+
+Print a report for a date range based on a start time and end time, send to CLI (console).
+
+```
+python3 automation.py log -ss 2021-07-01 --se 2021-07-11 -p
+```
+---
 
 [back to beginning of document](#top)
 
