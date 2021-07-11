@@ -15,6 +15,7 @@
     1. [Parameter Description Table](#parms)
 1. [CRON setup](#cron)
 1. [Understanding the Log File](#logs)
+1. [Sending Log Reports for Taxes or Documentation](#logs_report)
 
 ---
 ### ABOUT THIS PROGRAM <a name="what"></a>
@@ -594,7 +595,9 @@ The log file is only updated on an `alert`.
 |   3    | The timestamped reward value in USD | 
 |   4    | The timestamped current $DAG price in USD |
 
-### Creating Log Reports
+---
+
+### Creating Log Reports <a name="logs_report">
 
 From the command line of the node, you can request $DAG `log` reports, by issuing the `log` action followed by date or date range.
 
