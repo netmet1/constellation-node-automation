@@ -5,7 +5,6 @@ import yaml
 class Config():
 
     def __init__(self,dag_args):
-
         self.dag_args = dag_args
         self.path = os.path.dirname(__file__)
         
@@ -16,6 +15,7 @@ class Config():
         self.setup_flags()
         self.config_default_check()
         self.setup_dates_times()
+
 
     def reload_needed(self):
         new_config = self.pull_configuration()
@@ -75,10 +75,12 @@ class Config():
         self.log_start = self.dag_args.search_start
         self.log_end = self.dag_args.search_end
 
+
     def setup_variables(self):
         self.action = self.dag_args.Action
         self.last_run = "never"
         self.dag_log_file = self.path.replace("classes","logs/dag_count.log")
+        self.dag_log_file_path = self.path.replace("classes","logs/")        
         self.mms_email_recipients = self.config['email']['mms_recipients']
         self.email = self.config['email']['gmail_acct']
         self.token = self.config['email']['gmail_token']
@@ -96,6 +98,7 @@ class Config():
         self.silence_writelog = False
         self.local = False
         self.create_report = False
+
 
     def setup_flags(self):
         if self.action == "silent":
@@ -121,6 +124,9 @@ class Config():
                 self.local = False
             self.create_report = False
             self.silence_writelog = False
+        elif self.action == "log":
+            if self.dag_args.print is True:
+                self.local = True
         else: 
             # self.action is auto
             self.silence_email = False
@@ -132,6 +138,7 @@ class Config():
         self.splits_enabled = self.config['splits']['enabled']
         self.report_enabled = self.config['report']['enabled']
         self.collateral_enabled = self.config['collateral']['enabled']
+        self.csv = self.dag_args.csv
 
 
     def config_default_check(self):

@@ -165,7 +165,9 @@ class CheckDagStatus():
         elif action == "spaces":
             return re.sub('\n', '', line)                 
         elif action == "commas":
-            return re.sub(',', '', line)                 
+            return re.sub(',', '', line) 
+        elif action == "float_only":
+            return re.sub('[^0-9,.]', '', line)                
 
 
     def parse_memory(self):

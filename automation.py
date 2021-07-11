@@ -14,12 +14,15 @@ def retrieve_arguments():
     dag_parser.add_argument("-p", "--print", help="print to the console instead of mms/sms, does not work with 'auto'.",
                             action="store_true")
 
+    dag_parser.add_argument("-c", "--csv", help="For use with the 'log' action only.  Program will send a csv formated file with search results.",
+                            action="store_true")
+
     dag_parser.add_argument("-ss", "--search_start", 
-                            help="Start date search log files for DAG balance at a certain date in time. Format: YYYY-MM-DD. This will supply the last entry recorded for the specified date. If search_end is not specified a single date will be searched.", 
+                            help="For use with 'log' action. The start date search log files for DAG balance at a certain date in time. Format: YYYY-MM-DD. This will supply the last entry recorded for the specified date. If search_end is not specified a single date will be searched.", 
                             type=str,
                             metavar="sdate")                    
     dag_parser.add_argument("-se", "--search_end", 
-                            help="End date to search log files.  Format: YYYY-MM-DD", 
+                            help="For use with 'log' action. The end date to search log files.  Format: YYYY-MM-DD", 
                             metavar="edate",
                             type=str)    
 
@@ -32,14 +35,14 @@ def retrieve_arguments():
 
 if __name__ == "__main__":
     dag_args = retrieve_arguments()
-
     config = Config(dag_args)
-    core = Core(config)
-    logger = Logger(config)
 
-    if config.action == "auto":
-        core.auto_run_schedule()
-    elif config.action == "log":
+    if config.action == "log":
+        logger = Logger(config)
         logger.process_request()
     else:
-        core.node_checkup()
+        core = Core(config)
+        if config.action == "auto":
+            core.auto_run_schedule()
+        else:
+            core.node_checkup()
