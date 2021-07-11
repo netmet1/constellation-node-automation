@@ -12,6 +12,8 @@ class SendAMessage():
         self.user = self.config.email
         self.password = self.config.token
 
+        if self.config.csv:
+            self.recipients = [self.config.csv]
         for to in self.recipients:
             self.emailObj = EmailMessage()
             self.emailObj['subject'] = self.subject
@@ -23,10 +25,6 @@ class SendAMessage():
                 with open(attach, 'rb') as content_file:
                     content = content_file.read()
                     self.emailObj.add_attachment(content, maintype='application', subtype='pdf', filename=attach)
-
-                # attachment_msg = MIMEPart()
-                # attachment_msg.add_header('Content-Disposition', 'attachment', filename=attach)
-                # self.emailObj.add_attachment(attachment_msg)
 
             # print(f"Sending MMS to: {to}") # console debugging, informative.
             self.enable_smtp_server()

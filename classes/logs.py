@@ -18,7 +18,6 @@ class Logger():
 
 
     def process_request(self):
-        self.verify_config()
         current_date = self.config.log_start
 
         f = open(self.config.dag_log_file, "r")
@@ -35,7 +34,7 @@ class Logger():
             current_date = current_date + timedelta(days=1)
             current_date = datetime.strftime(current_date, "%Y-%m-%d")
 
-            if self.config.log_end is None or current_date >= self.config.log_end:
+            if not self.config.log_end or current_date >= self.config.log_end:
                 break
 
         self.format_results()
@@ -64,8 +63,9 @@ class Logger():
                     self.data.append(data_line)
                 self.log_msg += f"Date: {line[0]}\n"
                 self.log_msg += f"DAG WALLET AMT: {'{:,}'.format(int(line[1]))}\n"
-                self.log_msg += f"USD VALUE {'${:,.2f}'.format(float(line[2]))}\n"
-                if len(line) > 3:  # legacy error check per 2021-06-11 before price added to log
+                if len(line) > 2:  # legacy error check -- deprecate in next version               
+                    self.log_msg += f"USD VALUE {'${:,.2f}'.format(float(line[2]))}\n"
+                if len(line) > 3:  # legacy error check -- deprecate in next version
                     self.log_msg += f"DAG VALUE {'${:,.2f}'.format(float(line[3]))}\n"
                 self.log_msg += "===\n"
     
@@ -81,23 +81,8 @@ class Logger():
                 writer.writerow(self.header)
                 writer.writerows(self.data)
         
-        if not self.config.silence_email:
+        if not self.config.silence_email and not self.config.local:
             SendAMessage("normal",self.log_msg,self.config,self.csv_path_file)
-
-
-    def verify_config(self):
-        self.test_date(self.config.log_start)
-        if self.config.log_end is not None:
-            self.test_date(self.config.log_end)
-
-
-    def test_date(self,date):
-        try:
-            datetime.strptime(date, "%Y-%m-%d")
-        except:
-            print("Incorrect date format supplied\nPlease refer to the --help")
-            print("python3 automation.py log --help\n\n")
-            exit(1)
 
 
     def setup_csv(self):
@@ -105,7 +90,7 @@ class Logger():
         self.data = []
 
         file_name = f"{self.config.current_date}_search_{self.config.log_start}"
-        if self.config.log_end != None:
+        if not self.config.log_end:
             file_name += f"_{self.config.log_end}"
         self.csv_path_file = f"{self.config.dag_log_file_path}{file_name}.csv"
 

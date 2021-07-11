@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 import yaml
+import re
 
 class Config():
 
@@ -71,9 +72,19 @@ class Config():
         self.end_time = self.end_time.time()
         self.report_time = self.report_time.time()
 
-        # Log parmaters
-        self.log_start = self.dag_args.search_start
-        self.log_end = self.dag_args.search_end
+        # Final Test of Log Dates
+        if self.action == "log":
+            try:
+                datetime.strptime(self.log_start,"%Y-%m-%d")
+            except:
+                print("invalid log start time, please see README or --help")
+                exit(1)
+            if self.log_end:
+                try:
+                    datetime.strptime(self.log_end,"%Y-%m-%d")
+                except:
+                    print("invalid log end time, please README or see --help")
+                    exit(1)             
 
 
     def setup_variables(self):
@@ -99,6 +110,11 @@ class Config():
         self.silence_writelog = False
         self.local = False
         self.create_report = False
+
+        # Log parmaters
+        self.csv = self.dag_args.csv
+        self.log_start = self.dag_args.search_start
+        self.log_end = self.dag_args.search_end
 
 
     def setup_flags(self):
@@ -139,7 +155,6 @@ class Config():
         self.splits_enabled = self.config['splits']['enabled']
         self.report_enabled = self.config['report']['enabled']
         self.collateral_enabled = self.config['collateral']['enabled']
-        self.csv = self.dag_args.csv
 
 
     def config_default_check(self):
@@ -234,6 +249,16 @@ class Config():
             self.username = "root"
         if self.node_name == "":
             self.node_name = "MY_NODE_NAME_HERE"
+
+        if self.csv:
+            if not re.match("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", self.csv):
+                print("invalid CSV email detected, please see README or --help")
+                exit(1)
+            else:
+                if not self.log_start:
+                    print("CSV request without date range, please see README  or --help")
+                    exit(1)
+
 
 if __name__ == "__main__":
     print("This class module is not designed to be run independently, please refer to the documentation")
