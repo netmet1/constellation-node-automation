@@ -89,7 +89,7 @@ class Config():
         self.uptime = self.config['constraints']['uptime_threshold']
         self.load = self.config['constraints']['load_threshold']        
         self.username = self.config['email']['node_username']
-        self.node_name = self.config['email']['node_username']
+        self.node_name = self.config['email']['node_name']
         self.split1 = self.config['splits']['split1']
         self.split2 = self.config['splits']['split2']
         self.collateral_nodes = self.config['collateral']['node_count']
@@ -230,6 +230,10 @@ class Config():
             if self.report_enabled:
                 self.report_estimates = [.5,1,5,10,100]
 
+        if self.username == "":
+            self.username = "root"
+        if self.node_name == "":
+            self.node_name = "MY_NODE_NAME_HERE"
 
 if __name__ == "__main__":
     print("This class module is not designed to be run independently, please refer to the documentation")

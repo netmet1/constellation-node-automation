@@ -14,17 +14,18 @@ class Logger():
         self.config = config
         self.dag_log_list = []
         self.log_msg = ""
+        self.csv_path_file = None
 
 
     def process_request(self):
         self.verify_config()
-        found_dag = None
         current_date = self.config.log_start
 
         f = open(self.config.dag_log_file, "r")
         lines = f.readlines()
 
         while True:
+            found_dag = None
             for line in lines:
                 if current_date in line:
                     found_dag = line
@@ -42,7 +43,10 @@ class Logger():
 
 
     def format_results(self):
-        if self.dag_log_list[0] is None:
+        # clean data
+        self.dag_log_list = [x for x in self.dag_log_list if x != None]
+        
+        if not self.dag_log_list:
             self.log_msg = "No results Found...\n"
             self.log_msg += "Make sure format is correct:  YYYY-MM-DD\n"
             self.log_msg += "Example) 2021-07-03"
@@ -54,7 +58,9 @@ class Logger():
                 if self.config.csv:
                     data_line = []
                     for n in range(0,len(line)):
-                        data_line.append(re.sub('[^0-9,.]','',line[n]))
+                        if n != 0: # date
+                            line[n] = re.sub('[^0-9,.]','',line[n])
+                        data_line.append(line[n])
                     self.data.append(data_line)
                 self.log_msg += f"Date: {line[0]}\n"
                 self.log_msg += f"DAG WALLET AMT: {'{:,}'.format(int(line[1]))}\n"
@@ -63,8 +69,6 @@ class Logger():
     
 
     def send_results(self):
-        email_type = "normal"
-
         if self.config.local:
             print("SEARCH RESULTS\n===")
             print(f"{self.log_msg}\n")
@@ -74,10 +78,9 @@ class Logger():
                 writer = csv.writer(f)
                 writer.writerow(self.header)
                 writer.writerows(self.data)
-            email_type = "csv"
         
         if not self.config.silence_email:
-            SendAMessage(email_type,self.log_msg,self.config)
+            SendAMessage("normal",self.log_msg,self.config,self.csv_path_file)
 
 
     def verify_config(self):
