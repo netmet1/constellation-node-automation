@@ -28,7 +28,7 @@ class SendAMessage():
     def setup_message(self):
         # check what we need to do
         if self.action == "normal" or self.action == "error":
-            self.subject = "CONSTELLATION DARKSTAR"
+            self.subject = f"CONSTELLATION {self.config.node_username}"
         # come back to re-enable this later...
         # if self.action == "error":
         #     self.subject = "ERROR CONST DARSTAR"

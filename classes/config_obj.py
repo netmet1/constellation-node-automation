@@ -89,6 +89,7 @@ class Config():
         self.uptime = self.config['constraints']['uptime_threshold']
         self.load = self.config['constraints']['load_threshold']        
         self.username = self.config['email']['node_username']
+        self.node_name = self.config['email']['node_username']
         self.split1 = self.config['splits']['split1']
         self.split2 = self.config['splits']['split2']
         self.collateral_nodes = self.config['collateral']['node_count']

@@ -20,6 +20,8 @@ configuration:
         - 111111111@provider.gateway.net
         - 222222222@provider.gateway.net
         - whoever@whoever.com
+    node_name: My_Node
+    node_username: root
   constraints:
     error_max: 20
     memory_swap_min: 200000
