@@ -35,7 +35,7 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 
 ---
 
-##### Version: 0.3b
+##### Version: 0.4b
 
 ---
 ### FEATURES <a name="features"></a>
@@ -179,7 +179,7 @@ Max Login Exceeded: 15
 | rewards | How many rewards you have earned so far. How much your collateral has increased since the last time the program ran (incremental). |
 | USD | What are your rewards worth in $USD.  How much has it changed `+` for increases, `()` for decreases. |
 | Splits | Based on the [splits](#config) setup in the configuration, it will show you `split1`/`split2` |
-| DAG Price | What is the current price, based on an API call in real time. (coingecko) |
+| DAG Price | What is the current price, based on an API call in real time. (coingecko). **In the event an API call is unsuccessful after three attempts, a triple asterisk(*) will appear after the price to indicate the price is reflected from the last known log entry with a valid price.** |
 | DAG Price Change | What was the change since the last lookup `+` for increases, `()` for decreases. |
 | Collateral Nodes | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of Nodes you could possibly have. |
 | Collateral DAGs | Based on the number of nodes you added to the [configuration](#config) file prior to running the program.  It will compute the number of DAGs you should accumulated. | 

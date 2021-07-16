@@ -4,6 +4,7 @@ import requests
 import json
 import math
 from datetime import datetime
+from time import sleep
 
 
 class CheckDagStatus():
@@ -111,7 +112,7 @@ class CheckDagStatus():
                 result_stream = os.popen(command)
                 self.current_result = result_stream.read()
                 if "Rewards" in command:
-                    self.calculate_stat_variables()
+                    self.get_calc_stats_variables("alert")
                     self.current_result = self.cleaner(self.current_result,"spaces")
                     format_update = self.current_result.split(":")
                     try:
@@ -138,21 +139,23 @@ class CheckDagStatus():
                     self.results.append(self.current_result)
 
 
-    def calculate_stat_variables(self):
+    def get_calc_stats_variables(self,action):
         f = open(self.config.dag_log_file)
         last_line = f.readlines()
         f.close()
 
         last_line = last_line[len(last_line)-1]
         last_line = last_line.split("|")
-        self.last_dag_count = float(last_line[1])
-        self.last_price_usd = float(last_line[2])
+
         self.last_dag_usd = float(last_line[3])
+        if action == "alert":
+            self.last_dag_count = float(last_line[1])
+            self.last_price_usd = float(last_line[2])
 
-        self.current_dag_count = self.cleaner(self.current_result,"dag_count")
+            self.current_dag_count = self.cleaner(self.current_result,"dag_count")
 
-        self.delta_dags = int(self.current_dag_count) - int(self.last_dag_count)
-        self.delta_dags = str(self.delta_dags)
+            self.delta_dags = int(self.current_dag_count) - int(self.last_dag_count)
+            self.delta_dags = str(self.delta_dags)
 
 
     def cleaner(self, line, action):
@@ -234,14 +237,25 @@ class CheckDagStatus():
 
 
     def calculate_dag_to_usd(self):
-        resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=constellation-labs&vs_currencies=usd')
-        if resp.status_code != 200:
-            # This means something went wrong.
-            raise ApiError('GET /tasks/ {}'.format(resp.status_code))
-        
-        api_results = resp.json()
-        self.usd_dag_price = api_results['constellation-labs']['usd']
+        error_flag = False
 
+        for n in range(0,4):
+            # allow four attempts to retrieve new price before using last known price
+            resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=constellation-labs&vs_currencies=usd')
+            if resp.status_code == 200:
+                api_results = resp.json()
+                self.usd_dag_price = api_results['constellation-labs']['usd']
+                break
+            else:
+                # This means something went wrong.
+                # raise ApiError('GET /tasks/ {}'.format(resp.status_code))
+                if n > 2:
+                    self.get_calc_stats_variables("api_error")
+                    self.usd_dag_price = self.last_dag_usd
+                    error_flag = True
+                    break
+                sleep(2)
+                        
         for line in self.results:
             if line.find("Rewards") > -1:
                 parts = line.split(":")
@@ -267,7 +281,11 @@ class CheckDagStatus():
         self.usd_str = f"USD: {main_price} {self.delta_usd}"
         if self.config.splits_enabled:
             self.usd_str += f"\n{split1}/{split2}"
-        self.usd_str += f"\nDAG @ ${self.usd_dag_price}\n"
+        self.usd_str += f"\nDAG @ ${self.usd_dag_price}"
+
+        if error_flag:
+            self.usd_str += "***"
+        self.usd_str += "\n"
 
         self.usd_dag_delta = "{:,.7f}".format(abs(self.last_dag_usd-self.usd_dag_price))
         if self.last_dag_usd-self.usd_dag_price < 0:
