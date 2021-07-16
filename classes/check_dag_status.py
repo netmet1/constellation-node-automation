@@ -237,6 +237,8 @@ class CheckDagStatus():
 
 
     def calculate_dag_to_usd(self):
+        error_flag = False
+
         for n in range(0,4):
             # allow four attempts to retrieve new price before using last known price
             resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=constellation-labs&vs_currencies=usd')
@@ -248,7 +250,9 @@ class CheckDagStatus():
                 # This means something went wrong.
                 # raise ApiError('GET /tasks/ {}'.format(resp.status_code))
                 if n > 2:
-                    self.retrieve_last_known_dag_price()
+                    self.get_calc_stats_variables("api_error")
+                    self.usd_dag_price = self.last_dag_usd
+                    error_flag = True
                     break
                 sleep(2)
                         
@@ -277,7 +281,11 @@ class CheckDagStatus():
         self.usd_str = f"USD: {main_price} {self.delta_usd}"
         if self.config.splits_enabled:
             self.usd_str += f"\n{split1}/{split2}"
-        self.usd_str += f"\nDAG @ ${self.usd_dag_price}\n"
+        self.usd_str += f"\nDAG @ ${self.usd_dag_price}"
+
+        if error_flag:
+            self.usd_str += "*"
+        self.usd_str += "\n"
 
         self.usd_dag_delta = "{:,.7f}".format(abs(self.last_dag_usd-self.usd_dag_price))
         if self.last_dag_usd-self.usd_dag_price < 0:
