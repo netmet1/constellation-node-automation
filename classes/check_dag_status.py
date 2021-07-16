@@ -4,6 +4,7 @@ import requests
 import json
 import math
 from datetime import datetime
+from time import sleep
 
 
 class CheckDagStatus():
@@ -234,14 +235,21 @@ class CheckDagStatus():
 
 
     def calculate_dag_to_usd(self):
-        resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=constellation-labs&vs_currencies=usd')
-        if resp.status_code != 200:
-            # This means something went wrong.
-            raise ApiError('GET /tasks/ {}'.format(resp.status_code))
-        
-        api_results = resp.json()
-        self.usd_dag_price = api_results['constellation-labs']['usd']
-
+        for n in range(0,4):
+            # allow four attempts to retrieve new price before using last known price
+            resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=constellation-labs&vs_currencies=usd')
+            if resp.status_code == 200:
+                api_results = resp.json()
+                self.usd_dag_price = api_results['constellation-labs']['usd']
+                break
+            else:
+                # This means something went wrong.
+                # raise ApiError('GET /tasks/ {}'.format(resp.status_code))
+                if n > 2:
+                    self.retrieve_last_known_dag_price()
+                    break
+                sleep(2)
+                        
         for line in self.results:
             if line.find("Rewards") > -1:
                 parts = line.split(":")
