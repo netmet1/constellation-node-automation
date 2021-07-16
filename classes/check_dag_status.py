@@ -112,7 +112,7 @@ class CheckDagStatus():
                 result_stream = os.popen(command)
                 self.current_result = result_stream.read()
                 if "Rewards" in command:
-                    self.calculate_stat_variables()
+                    self.get_calc_stats_variables("alert")
                     self.current_result = self.cleaner(self.current_result,"spaces")
                     format_update = self.current_result.split(":")
                     try:
@@ -139,21 +139,23 @@ class CheckDagStatus():
                     self.results.append(self.current_result)
 
 
-    def calculate_stat_variables(self):
+    def get_calc_stats_variables(self,action):
         f = open(self.config.dag_log_file)
         last_line = f.readlines()
         f.close()
 
         last_line = last_line[len(last_line)-1]
         last_line = last_line.split("|")
-        self.last_dag_count = float(last_line[1])
-        self.last_price_usd = float(last_line[2])
+
         self.last_dag_usd = float(last_line[3])
+        if action == "alert":
+            self.last_dag_count = float(last_line[1])
+            self.last_price_usd = float(last_line[2])
 
-        self.current_dag_count = self.cleaner(self.current_result,"dag_count")
+            self.current_dag_count = self.cleaner(self.current_result,"dag_count")
 
-        self.delta_dags = int(self.current_dag_count) - int(self.last_dag_count)
-        self.delta_dags = str(self.delta_dags)
+            self.delta_dags = int(self.current_dag_count) - int(self.last_dag_count)
+            self.delta_dags = str(self.delta_dags)
 
 
     def cleaner(self, line, action):
