@@ -35,7 +35,7 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 
 ---
 
-##### Version: 0.3b
+##### Version: 0.4b
 
 ---
 ### FEATURES <a name="features"></a>
