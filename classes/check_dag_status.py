@@ -284,7 +284,7 @@ class CheckDagStatus():
         self.usd_str += f"\nDAG @ ${self.usd_dag_price}"
 
         if error_flag:
-            self.usd_str += "*"
+            self.usd_str += "***"
         self.usd_str += "\n"
 
         self.usd_dag_delta = "{:,.7f}".format(abs(self.last_dag_usd-self.usd_dag_price))
