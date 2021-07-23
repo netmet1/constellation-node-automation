@@ -1,26 +1,36 @@
 # CONSTELLATION
 
-## Node Operator Datapreneuer Alerting Automation Program/Script
+## Node Operator Datapreneuer Alerting Automation Program
 
 ## TABLE OF CONTENTS <a name="top"></a>
 1. [About Program](#what)
+1. [Changes](#changes)
 1. [Features](#features)
 1. [Usage](#usage)
-    1. [Alert Results Table](#alert_readout_key)
-1. [Installation](#installation)
-    1. [Setup Gmail](#gmail)
-    1. [Node Installation](#nodeinstall)
-    1. [Prerequisites](#prereq)
+    - [Start Scheduled Alert/Report](#schedule_alert)
+    - [Send Out a manual Alert](#send_alert)
+    - [Print alert to CLI](#send_alert)
+    - [Alert Results Table](#alert_readout_key)
+    - [Send Out a manual Report](#send_report)
+    - [Send report to CLI](#send_report)
+    - [Send Out a manual health check](#send_health)
+    - [Send health check to CLI](#send_health)
+    - [Example Log Reports](#logs_report)
+    - [Print Log Reports to CLI](#logs_report)
 1. [How to Configure](#config)
     1. [Parameter Description Table](#parms)
-1. [CRON setup](#cron)
 1. [Understanding the Log File](#logs)
 1. [Sending Log Reports for Taxes or Documentation](#logs_report)
+1. [Installation](INSTALL.md)
+    1. [Setup Gmail](INSTALL.md#gmail)
+    1. [Node Installation](INSTALL.md#nodeinstall)
+    1. [Prerequisites](INSTALL.md#prereq)
 
 ---
+
 ### ABOUT THIS PROGRAM <a name="what"></a>
 
-A fun program to run on your node.  It will send you alerts so you can keep up to date on the progress of your node, DAGs, rewards, and basic **system engineering** statistics, to help keep you in the know.
+A Python automation and status program to run on your node.  It will send you alerts so you can keep up to date on the progress of your node, DAGs, rewards, and basic **system engineering** statistics, to help keep you in the know.
 
 **IT TAKES NO RESPONSIBILITY FOR RESULTS, OUTCOMES, AND ANYTHING ELSE THAT MIGHT CAUSE ISSUES.  USE AT YOUR OWN RISK**
 
@@ -35,7 +45,25 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 
 ---
 
-##### Version: 0.4b
+##### Version: 1.0b
+
+---
+### CHANGES <a name="changes"></a>
+
+- Added Health For Endpoint against Load Balancer
+- Added Health Check against Load Balancer
+- Minor refactoring of code logic
+- Changed `15M Load` to `15M CPU`
+    - Review CPU load 15 minutes based on number of CPU cores (found dynamically).
+    - Using System Engineering standard average of .7 per cpu core.
+- Uptime bug fixed
+    - If the system was up for under 1 day, the results did not populate correctly causing the system to exit
+- **Added Health Check Status to Alerts**
+- Removed Installation Instructions from README.md
+- Added [INSTALL.md](INSTALL.md) with Installation instructions
+    - Install
+    - Upgrade
+
 
 ---
 ### FEATURES <a name="features"></a>
@@ -53,6 +81,9 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 - Memory and Swap Warning
 - Uptime Warning
 - Load Warning
+- Health Checks
+    - Load Balancer
+    - Load Balancer's view or your Endpoint
 - Security Checks
     - Unauthorized login attempts
     - Login attempt port ranges
@@ -62,12 +93,15 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 - Earned Node Counter
 - End of Day Summary with passive earnings and estimations
 - Local Print Feature
+- Log DAG accumulation and pricing history
+    - Print or email details for date or date range
+    - CSV attachment via email
 
 ## USAGE <a name="usage"></a>
 
-| command | Parameter | Optional |
+| command | Parameters | Optional |
 | ------- | :-------: | :------- | 
-| python3 automation.py | `alert` `report` `auto` | -p, & |
+| python3 automation.py | `alert` `report` `auto` `health` `silent` | -p, & |
 
 > `&` will run the system in the background until `ctl-c` performed.
 
@@ -77,6 +111,7 @@ A fun program to run on your node.  It will send you alerts so you can keep up t
 | **alert** | This will run the a system alert report once.  This allows you to run a one-time instance of the program, at the time of your choice (current moment in time when executed). |
 | **report** | This will run the system and send the `end of the day` report once.  This allows you to run a one-time instance of the program, at the time of your choice. *Note: This may produce unexpected statistical results, if not run at the end of the day.* |
 | **silent** | This will run the program and update log files, but will **not** alert to the user via MMS, SMS or email. |
+| **health** | This will perform a health check against the load balancer (LB) configured in the `config.yaml` file and your node's connection to the LB. Add the `-p` option to print to the console (CLI) instead of email. |
 
 #### Help Usage
 
@@ -88,7 +123,7 @@ dag alerting script
 
 positional arguments:
   ACTION                Type of action the script will run: (auto, alert,
-                        report, silent or log). Search dates (currently) only
+                        report, health, silent, or log). Search dates (currently) only
                         work with the "log" action.
 
 optional arguments:
@@ -110,7 +145,7 @@ optional arguments:
                         files. Format: YYYY-MM-DD
 ```
 
-#### Start the program to run on a schedule via the [configuration](#config) parameters (start/stop/interval)
+#### Start the program to run on a schedule via the [configuration](#config) parameters (start/stop/interval) <a name="schedule_alert">
 
 ```
 python3 automation.py auto 
@@ -124,7 +159,8 @@ python3 automation.py auto &
 > **The `auto` command will execute the `alert` command every [n](#config) `int_minutes`, between the times configured in the [interval](#config) section of the configuration
 file.  At 5 minutes past the `end_time`, the `report` command will be issued.  No alerts will be sent outside of the `start_time` and `end_time`.**
 
-#### Send out a manual alert
+#### Send out a manual alert <a name="send_alert">
+
 
 ```
 python3 automation.py alert
@@ -163,7 +199,8 @@ Data usage: 12% of 18G
 Memory: LOW@368,348
 Swap: OK@7,713,020
 Days up: OK@12
-15M Load: OK@2.00
+15M CPU: OK@2.00
+Health ChecK: Healthy
 Ready Nodes: 81
 =========================
 Inv Login Attempts: 683
@@ -191,7 +228,8 @@ Max Login Exceeded: 15
 | Memory | Will show memory allocation of `OK` or `LOW` based on the [configuration](#config) file setup. |
 | Swap | Will show swap allocation of `OK` or `LOW` based on the [configuration](#config) file setup. |
 | Days Up | Will show uptime in `days`  for the server with `OK` or `WARN` based on the [configuration](#config) file setup. |
-| 15M Load | Will show the current 15 minute average CPU load statistics with `OK` or `WARN` based on the [configuration](#config) file setup. |
+| 15M CPU | Will show the current 15 minute average CPU load statistics with `OK` or `WARN` based on the [configuration](#config) file setup. |
+| Health Check | Every N minutes based on the `healthcheck: int_minutes` the system will do a GET to the constellation LB and a GET against your specific endpoint, and return `healthy` or `error` based on the `status return codes`. |
 | Ready Nodes | How many nodes are currently on your state channel and in `Ready`, based on `dag nodes`. |
 | Inv Login Attempts | For the entire `auth.log` file, how many times has a user auth attempt begin denied. |
 | Port Range | What was the lowest port and highest port where invalid login attempts were logged.  **If this shows below `1024`, this may be cause for concern.** |
@@ -221,7 +259,7 @@ MAINNET
 [...]
 ```
 
-#### Send out manual end of day report.
+#### Send out manual end of day report. <a name="send_report">
 
 ```
 python3 automation.py report
@@ -310,128 +348,38 @@ YEARLY  : $90,720,000
 
 > **NOTE: If the program doesn't run for the day, the results will (obviously) be incorrect or screwed.  It works off the `dag_count.log` file located in the root of the automation program folder.** *Log rolling is not enabled, so you will need to keep an eye on the file, until a new release adds the log rolling feature.*
 
-## INSTALLATION <a name="installation"></a>
-
-### GMAIL SETUP <a name="gmail"></a>
-
-In order for this program to work properly, you will need to setup your Gmail account to allow incoming pushes from your Node.  
-
->This can also be done via Twilio; however, I will show how to do it via Gmail for the purposes of this README.   *A lot of us are still 9-5'ers and need a free avenue*.
-
->You will need to setup 2-factor authentication in order to allow push notifications.  If you do not want to alter your Gmail, you can either sign up for a Twilio account and use their services, or (**used for this tutorial**) you can setup a dedicated new Gmail.   
-
-Navigate to Gmail, and setup your account *or* login to your existing account.
-
-**TWO STEP VERIFICATION**
-
-1. https://myaccount.google.com (*navigate here after logging in*)
-1. Click on `security` from the LEFT side menu
-1. Enable `2-Step Verification`
-   - Go through the step-by-step to set this up (*out of scope, for this document*)
-
-**APP PASSWORD**
-
-1. Follow steps above to return back to the `security` page.
-1. `App passwords` option should appear.
-1. Click `App passwords`.
-1. From the `Select App` dropdown select `other`
-1. Give it a name:  *example)* **DAGemailAlerts**
-1. Click `GENERATE`
-1. Copy and **save** the password for later.
-
-**PREPARE MMS EMAIL ADDRESSES**
-
-Figure out the proper email addresses that correlate to your phone providers MMS and SMS gateways.  You will find a nice cheat sheet in the following link below. Navigate to `step 3` on the website.  
-
-> This speaks to United States carriers, please refer to your countries carrier to complete this step.
-
-https://www.digitaltrends.com/mobile/how-to-send-a-text-from-your-email-account/
-
-In order to properly display the text messages, it is highly recommended to use the MMS gateway verses the SMS. 
-
->Standard Data Rates Will Apply
-
-### NODE INSTALLATION <a name="nodeinstall"></a>
-
-Log into your node  
-
->**NOTE**: The username of the box will be either `root` or whatever username you setup on the Node.  This was done when you set yourself up to join the constellation network.  These instructions will use a user called `nodeuser`.
-
-Create a dedicated directory for your automation program.
-
-If you decide to do a `git clone`, you may **not** want or need to create the `automation` folder, as git will create a new directory `constellation-node-automation` which would suffice.
-
-Without Git Clone, create the following:
+#### Do a health check <a name="send_health">
 ```
-nodeuser@constellation-node:/# cd ~
-nodeuser@constellation-node:~# mkdir automation
-nodeuser@constellation-node:~# cd automation
-nodeuser@constellation-node:~/automation# pwd
-/nodeuser/automation
-nodeuser@constellation-node:~/automation#
+python3 automation.py health
 ```
 
-#### prerequisites <a name="prereq"></a>
-
-You will need python3 installed.
-*This program was tested on `python 3.6.9`.*
+Do a health check and print to the console (CLI)
 ```
-nodeuser@constellation-node:~# python3 --version
-Python 3.6.9
-```
-If you get an error.
-```
-sudo apt-get install python3
+python3 automation.py health -p
 ```
 
-You will need `pip3` installed.
+Results via the MMS, email, or CLI
 ```
-root@constellation-node:~# pip3 --version
-pip 9.0.1 from /usr/lib/python3/dist-packages (python 3.6)
-```
-If you get an error.
-```
-sudo apt-get install python3-pip
-```
-> Note: As of the current time, this program uses default Python libraries, so *pip* may not be needed, as of this version of the automation program.  Future releases may require *pip*, so installation is recommended. 
-
-### IMPORTANT
-**The constellation installation is expected to be in the root of your node's user's home directory.**
-
-```
-nodeuser@constellation-node:~/constellation# pwd
-/nodeuser/constellation
-nodeuser@constellation-node:~/constellation#
+<your_node_here>
+=======================
+HEALTH STATUS REPORT
+--------------------
+lb.constellationnetwork.io: Healthy
+Endpoint <your_iop_here>: Healthy
+Codes: (200, 204)
 ```
 
-> You cannot run a `report` until an `alert` has been run.
-
-**Ready to install program**
-
-**`git clone`** this project onto your node (recommended) **or**, copy the necessary files over to your `/nodeuser/automation` directory. (*how to clone the git repo is out of scope of this documentation.*)
-
-File structure should appear as follows:
 ```
-automation
-├── dag_count.log
-├── __init__.py
-├── automation.py
-├── classes
-│   │   ├── __init__.py
-│   │   ├── check_dag_status.py
-│   │   ├── config_obj.py
-│   │   ├── core.py
-│   │   ├── error_log_check.py
-│   │   ├── reports.py
-│   │   └── send_sms_email.py
-├── configs
-│   │   ├── config.example.yaml
-├── logs
-│   │   ├── __init__.py
-│   │   ├── dag_count.log
+<your_node_here>
+=======================
+HEALTH STATUS REPORT
+--------------------
+lb.constellationnetwork.io: Healthy
+Endpoint <your_ip_here>: Error
+Codes: (200, 502)
 ```
 
-> You will need to rename the `config.example.yaml` file to `config.yaml` and update with correct [settings](#config). Configuration setup is discussed in the next section.
+---
 
 ## CONFIGURATION <a name="config"></a>
 
@@ -456,15 +404,22 @@ configuration:
     memory_swap_min: 200000
     security_check: true
     uptime_threshold: 30
-    load_threshold: 40
+    load_threshold: .7
+  healthcheck:
+    enabled: true
+    lb: <constellation_lb_fqdn>
+    lb_port: 9000
+    node_ip: your_nodes_ext_ip_here
+    node_port: 9001
+    int_minutes: 5
   intervals:
     start_time: '07:00'
     end_time: '20:00'
     int_minutes: 15
   splits:
     enabled: true
-    split1: 0.7
-    split2: 0.3
+    split1: .7
+    split2: .3
   collateral:
     enabled: true
     node_count: 2
@@ -492,11 +447,19 @@ configuration:
 | - | `memory_swap_min` | Low end threshold before alerting that memory or swap is low.  The same decimal is used to check both.  Memory and Swap are independently checked. | decimal | `100000` | no
 | - | `security_check` | Do you want the system to count unauthorized access requests and ports. | boolean | `false` | no
 | - | `uptime_threshold` | Number of days of uptime the server/node/instance has been running.  *Recommendation is to reboot after monthly patches* | int | `30` | no
-| - | `load_threshold` | Percentage of CPU load you want to warn against when threshold is exceeded. *interger represented as a percentage* | int | `40` | no
+| - | `load_threshold` | Percentage of CPU load you want to warn against when threshold is exceeded. *float represented as a percentage* | float | `.7` | no
+| **healthcheck** |  | Features that help setup the health check against the Load Balancer (LB) and End Node (Your Node) |
+| - | `enabled` |  Enable this feature. | boolean | `false` | yes
+| - | `lb` | The fully qualified domain name of the constellation LB. | string |  | yes
+| - | `lb_port` | Which TCP port is your health check using to do a GET for a response code? | int | `9000` | yes
+| - | `node_ip` | The external IP address of your node | string | `X.X.X.X` | yes
+| - | `node_port` | Which TCP port is your health check using to do a GET for a response code from the LB for your IP? | int | `9001` | yes| 
+| - | `int_minutes` | How often do you want to do a health check against the LB?  **no less than 5 or greater than 60**. Must be increments of 5. | int | `30` | no | 
+| - | `alarm_once` | If your End Point or the LB has an issue, only alarm once.  You will get alerted again, when the LB or EndPoint node is reachable again. If `false` as long as the LB or End Point is down, you will receive an alert every X minutes, based on the `int_minutes` setting. Because this is a critical function, it does not adhere to the `start_time` and `end_time` that might be setup for the normal `alert` feature. | boolean | `true` | yes | 
 | **intervals** |  | Setup when you want the alerts to start/stop being pushed to your `mms_email_recipients`. |
 | - | `start_time` | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the program to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
 | - | `end_time` | 24 hour clock notation - local time zone.  When do you want the alerting to stop each day? **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'20:00'` | no
-| - | `int_minutes` | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
+| - | `int_minutes` | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](INSTALL.md#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
 | **splits** | | This section is an optional configuration. When enabled, this feature will break out rewards/income into percentages between `split1` and `split2`.  When added together this should equal 1 (100%), otherwise calculations will not be accurate.  `Example`: You want to calculate how much of your income will be used for reinvestment (split1) verses taking profits (split2). |
 | - | `enabled` | Enable this feature. | boolean | `false` | yes
 | - | `split1` | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
@@ -511,56 +474,6 @@ configuration:
 > **Warning**: When entering in the `start_time` and `end_time` parameters, if `start_time` is after the `end_time` the system will revert to defaults (see above), instead of erroring out.
 
 > The program will check if the `config.yaml` has been updated by the user every `int_minutes`.  Therefore, any changes will **not** take affect until the next `int_minutes` interval is reached.
-
-#### SETUP CRON JOB <a name="cron"></a>
-
-*BASED ON A DIGITAL OCEAN NODE - UBUNTU 18.04*
-
-Setup the crontab on your system to start the program at reboot.
-
-> **NOTE**: This is if you want the program to run on startup and alert; based on the settings in the configuration file.  If you do not want to do it this way, you can see the [alternative option](#alt_cron) to run via the crontab iteratively, verses running the program in the background.
-
-```
-nodeuser@constellation-node:/# crontab -e
-```
-
-Add the following to the bottom of the file.  see [usage section](#usage) for details.  
-
-> Leave the `[...]` out, it is just an indication that other code is probably seen above (or below) the line you need to enter.
-
-```
-[...]
-@reboot /usr/bin/python3 /nodeuser/automation/automation.py auto >> ~/cron.log 2>&1
-```
-
-Start the program manually, because you don't want to reboot.  The first alert will not appear until the designated interval:
-
-```
-nodeuser@constellation-node:~# nohup python3 automation.py auto &
-```
-
-##### Alternative CRON Method <a name="alt_cron">
-
-```
-nodeuser@constellation-node:/# crontab -e
-```
-
-You can run crontab code as follows:
-
-> **note**: You are using `alert` and `report` verses `auto`.
-
-```
-[...]
-*/15    07-19   *       * *     /usr/bin/python3 /nodeuser/automation/automation.py alert >> ~/cron.log 2>&1
-0          20   *       * *     /usr/bin/python3 /nodeuser/automation/automation.py alert >> ~/cron.log 2>&1
-5          20   *       * *     /usr/bin/python3 /nodeuser/automation/automation.py report >> ~/cron.log 2>&1
-```
-
-**line 1**:  Every 15 minutes between 07:00 and 19:45 of every day, every month, every year, run the program with the `alert` argument.
-
-**line 2**: Start of the hour at 20:00 run the program once, every day, every month, every year... with the `alert` argument.
-
-**line 3**: Five minutes past the 20:00 hour, run the program with the `report` argument.
 
 ---
 

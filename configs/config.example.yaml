@@ -1,5 +1,5 @@
 # DAG Node Alerting Script
-# v0.4b
+# v1.0b
 # Author: hgtp://netmet
 # ========================
 #
@@ -27,17 +27,25 @@ configuration:
     memory_swap_min: 200000
     security_check: true
     uptime_threshold: 30
-    load_threshold: 40
+    load_threshold: .7
+  healthcheck:
+    enabled: false
+    lb: lb.constellationnetwork.io
+    lb_port: 9000
+    node_ip: your_nodes_ext_ip_here
+    node_port: 9001
+    int_minutes: 5
+    alarm_once: true
   intervals:
     start_time: '07:00'
     end_time: '20:00'
     int_minutes: 15
   splits:
-    enabled: true
+    enabled: false
     split1: 0.7
     split2: 0.3
   collateral:
-    enabled: true
+    enabled: false
     node_count: 1 
   report_estimates:
     - .1

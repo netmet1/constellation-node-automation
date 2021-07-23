@@ -98,7 +98,7 @@ class Config():
         self.error_max = self.config['constraints']['error_max']
         self.mem_swap_min = self.config['constraints']['memory_swap_min']
         self.uptime = self.config['constraints']['uptime_threshold']
-        self.load = self.config['constraints']['load_threshold']        
+        self.load = self.config['constraints']['load_threshold'] 
         self.username = self.config['email']['node_username']
         self.node_name = self.config['email']['node_name']
         self.split1 = self.config['splits']['split1']
@@ -106,6 +106,16 @@ class Config():
         self.collateral_nodes = self.config['collateral']['node_count']
         self.report_estimates = self.config['report']['estimates']
         self.alert_interval = self.config['intervals']['int_minutes']
+
+        self.health_enabled = self.config["healthcheck"]["enabled"]
+        self.lb = self.config["healthcheck"]["lb"]
+        self.node = self.config["healthcheck"]["node_ip"]
+        self.lb_port = self.config["healthcheck"]["lb_port"]
+        self.node_port = self.config["healthcheck"]["node_port"]
+        self.health_int = self.config["healthcheck"]["int_minutes"]
+        self.lb_url = f"http://{self.lb}:{self.lb_port}/cluster/info"
+        self.node_url = f"http://{self.lb}:{self.lb_port}/utils/health/{self.node}:{self.node_port}"
+        
         self.silence_email = False
         self.silence_writelog = False
         self.local = False
@@ -144,6 +154,12 @@ class Config():
         elif self.action == "log":
             if self.dag_args.print is True:
                 self.local = True
+        elif self.action == "health":
+            if self.dag_args.print is True:
+                self.local = True
+                self.silence_email = True
+                self.create_report = False
+                self.silence_writelog = True
         else: 
             # self.action is auto
             self.silence_email = False
@@ -155,6 +171,8 @@ class Config():
         self.splits_enabled = self.config['splits']['enabled']
         self.report_enabled = self.config['report']['enabled']
         self.collateral_enabled = self.config['collateral']['enabled']
+        self.health_alarm_once = self.config['healthcheck']['alarm_once']
+        self.health_failure = None
 
 
     def config_default_check(self):
@@ -198,13 +216,13 @@ class Config():
         try:
             float(self.load)
         except:
-            self.load = 40
+            self.load = .7
         else:
             if self.load == -1 or self.load > 1:
-                self.load = 40
+                self.load = .7
         finally:
-            self.load = float(self.load)
- 
+            self.load = self.grab_cpu_cores()  
+
         try:
             float(self.split1)
         except:
@@ -219,6 +237,18 @@ class Config():
             int(self.collateral_nodes)
         except:
             self.collateral_enabled = False
+
+        try:
+            int(self.health_int)
+        except:
+            self.health_int = 30
+        if self.health_int < 6:
+            self.health_int = 5
+        else:
+            # round to nearest 5
+            self.health_int = 5*round(self.health_int/5)
+            if self.health_int > 60:
+                self.health_int = 60
 
         if not isinstance(self.mms_email_recipients,list): 
             print("no recipients have been specified, or error in config.yaml.  Please see README.md")
@@ -258,6 +288,31 @@ class Config():
                 if not self.log_start:
                     print("CSV request without date range, please see README  or --help")
                     exit(1)
+
+
+    def grab_cpu_cores(self):
+        result_stream = os.popen("cat /proc/cpuinfo | grep 'cpu cores' | awk '{print $4}' | tail -1")
+        current_load = float(result_stream.read())
+        current_load = current_load - (1 - self.load)
+        return current_load
+
+    def build_time(self,mins,back_forward,time="now"):
+        if time == "now":
+            new_time = datetime.now()
+        else:
+            new_time = time
+        if back_forward == "forward":
+            new_time = new_time + timedelta(minutes=mins)
+        elif back_forward == "backward":
+            new_time = new_time - timedelta(minutes=mins)
+        elif back_forward == "closest_forward":
+            new_time = new_time - timedelta(minutes=(new_time.minute%mins)-mins)
+        elif back_forward == "closest_backward":
+            new_time = new_time - timedelta(minutes=new_time.minute%mins)
+        new_time = datetime.strftime(new_time,"%H:%M")
+        new_time = datetime.strptime(new_time,"%H:%M").time()
+
+        return new_time
 
 
 if __name__ == "__main__":

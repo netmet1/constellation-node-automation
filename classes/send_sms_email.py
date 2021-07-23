@@ -35,8 +35,10 @@ class SendAMessage():
 
     def setup_message(self):
         # check what we need to do
-        if self.action == "normal" or self.action == "error":
+        if self.action == "normal" or self.action == "auto" or self.action == "error":
             self.subject = f"CONSTELLATION {self.config.node_name}"
+        elif self.action == "health":
+            self.subject = f"HEALTH CHECK {self.config.node_name}"
         # come back to re-enable this later...
         # if self.action == "error":
         #     self.subject = "ERROR CONST DARSTAR"

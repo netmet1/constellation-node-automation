@@ -9,7 +9,7 @@ def retrieve_arguments():
     dag_parser.add_argument('Action',
                             metavar='ACTION',
                             type=str,
-                            help="Type of action the script will run:\n(auto, alert, report, silent or log). Search dates (currently) only work with the \"log\" action.",
+                            help="Type of action the script will run:\n(auto, alert, report, health, silent or log). Search dates (currently) only work with the \"log\" action.",
                             default="alert")
     dag_parser.add_argument("-p", "--print", help="print to the console instead of mms/sms, does not work with 'auto'.",
                             action="store_true")
@@ -49,5 +49,7 @@ if __name__ == "__main__":
         core = Core(config)
         if config.action == "auto":
             core.auto_run_schedule()
+        elif config.action == "health":
+            core.node_health()
         else:
             core.node_checkup()

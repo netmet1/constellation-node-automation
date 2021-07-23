@@ -28,7 +28,7 @@ class CheckDagStatus():
             "/usr/local/bin/dag metrics | grep 'State'",
             "df -h | grep 'vda1 ' | awk '{print \"Data usage: \"$5\" of \"$3}'",
             "free | awk '{print $4}'",
-            "uptime | awk '{print $3\" \"$12}'",
+            "uptime",
             "/usr/local/bin/dag nodes --mainnet | grep 'Ready' | wc -l | awk '{print \"Ready Nodes: \"$0}'",
             "addline_security"
         ]
@@ -109,6 +109,16 @@ class CheckDagStatus():
             if "security" in command and self.config.security_enabled is True:
                 self.security_check()
             else:
+                if "uptime" in command:
+                    # fix problem with uptime less than 1 day
+                    result_stream = os.popen("uptime")
+                    result_test = result_stream.read()
+                    if "day" in result_test:
+                        command = "uptime | awk '{print $3\" \"$12}'"
+                    elif "min" in result_test:
+                        command = "uptime | awk '{print $3\" \"$11}'"
+                    else:
+                        command = "uptime | awk '{print $3\" \"$10}'"
                 result_stream = os.popen(command)
                 self.current_result = result_stream.read()
                 if "Rewards" in command:
@@ -135,6 +145,11 @@ class CheckDagStatus():
                     self.parse_memory()
                 if "uptime" in command:
                     self.parse_uptime_load()
+                    # add healthcheck status (up_monitor)
+                    if self.config.health_failure:
+                        self.current_result += f"Health Check: Error"
+                    else:
+                        self.current_result += f"Health Check: Healthy"
                 if self.current_result is not "":
                     self.results.append(self.current_result)
 
@@ -198,8 +213,15 @@ class CheckDagStatus():
 
     def parse_uptime_load(self):
         details = self.current_result.split(" ")
+        details[0] = self.cleaner(details[0],"spaces")
+        details[0] = self.cleaner(details[0],"commas")
         details[1] = self.cleaner(details[1],"spaces")
         details[1] = self.cleaner(details[1],"commas")
+
+        try: 
+            int(details[0])
+        except:
+            details[0] = 1
 
         if int(details[0]) > self.config.uptime:
             usage_line = f"Days Up: WARN@{details[0]}"
@@ -207,11 +229,11 @@ class CheckDagStatus():
             usage_line = f"Days up: OK@{details[0]}"
 
         if float(details[1]) > float(self.config.load):
-            usage_line2 = f"15M Load: WARN@{details[1]}"
+            usage_line2 = f"15M CPU: WARN@{details[1]}"
         else:
-            usage_line2 = f"15M Load: OK@{details[1]}"
+            usage_line2 = f"15M CPU: OK@{details[1]}"
 
-        self.current_result = f"{usage_line}\n{usage_line2}"
+        self.current_result = f"{usage_line}\n{usage_line2}\n"
 
 
     def prepare_results(self):
