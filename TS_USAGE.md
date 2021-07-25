@@ -106,7 +106,7 @@ Traceback (most recent call last):
 FileNotFoundError: [Errno 2] No such file or directory: '/root/constellation-node-automation-1.0b/configs/config.yaml'
 ```
 
-Please refer to the [INSTALL.md((/INSTALL.md#configuration) section to add your `config.yaml` and configure it properly.
+Please refer to the [INSTALL.md](/INSTALL.md#configuration) section to add your `config.yaml` and configure it properly.
 
 #### OTHER COMMON ERRORS <a name="other">
 
