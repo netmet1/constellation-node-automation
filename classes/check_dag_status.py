@@ -159,18 +159,24 @@ class CheckDagStatus():
         last_line = f.readlines()
         f.close()
 
-        last_line = last_line[len(last_line)-1]
-        last_line = last_line.split("|")
 
-        self.last_dag_usd = float(last_line[3])
-        if action == "alert":
-            self.last_dag_count = float(last_line[1])
-            self.last_price_usd = float(last_line[2])
+        try:
+            last_line = last_line[len(last_line)-1]
+        except:
+            # dag_log is empty... first run?
+            last_line = f"{self.now}|0|0|{self.usd_dag_price}"
+        finally:
+            last_line = last_line.split("|")
 
-            self.current_dag_count = self.cleaner(self.current_result,"dag_count")
+            self.last_dag_usd = float(last_line[3])
+            if action == "alert":
+                self.last_dag_count = float(last_line[1])
+                self.last_price_usd = float(last_line[2])
 
-            self.delta_dags = int(self.current_dag_count) - int(self.last_dag_count)
-            self.delta_dags = str(self.delta_dags)
+                self.current_dag_count = self.cleaner(self.current_result,"dag_count")
+
+                self.delta_dags = int(self.current_dag_count) - int(self.last_dag_count)
+                self.delta_dags = str(self.delta_dags)
 
 
     def cleaner(self, line, action):

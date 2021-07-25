@@ -25,6 +25,8 @@
     1. [Setup Gmail](INSTALL.md#gmail)
     1. [Node Installation](INSTALL.md#nodeinstall)
     1. [Prerequisites](INSTALL.md#prereq)
+        1. [Node TimeZone Setup](/INSTALL.md#clocksetup)
+1. [Common Commands and Troubleshooting](TS_USAGE.md)
 
 ---
 
@@ -45,24 +47,23 @@ A Python automation and status program to run on your node.  It will send you al
 
 ---
 
-##### Version: 1.0b
+##### Version: v1.1b
 
 ---
 ### CHANGES <a name="changes"></a>
 
-- Added Health For Endpoint against Load Balancer
-- Added Health Check against Load Balancer
-- Minor refactoring of code logic
-- Changed `15M Load` to `15M CPU`
-    - Review CPU load 15 minutes based on number of CPU cores (found dynamically).
-    - Using System Engineering standard average of .7 per cpu core.
-- Uptime bug fixed
-    - If the system was up for under 1 day, the results did not populate correctly causing the system to exit
-- **Added Health Check Status to Alerts**
-- Removed Installation Instructions from README.md
-- Added [INSTALL.md](INSTALL.md) with Installation instructions
-    - Install
-    - Upgrade
+- Fix first time run bug
+    - The first time the program is run, the `dag_count.log` that is responsible for holding the history of alerts and which is referenced when log searches are done: either or accounting or taxes, etc. is **empty**.  This should only occur the first time **ever** that the program is run.  When the program attempts to review the file... It was reading an empty file and erroring out.
+    - Created a try/except to populate the file if it is empty with the date/time and current DAG price before continuing.
+- The `config.example.yaml` file was missing new `v1.0b` entries.  
+    - This would cause the program to crash on start.
+    - Fixed the `config.example.yaml` file.
+- Added TimeZone checking and configuration instructions to the INSTALL.md
+- Added more detail verbiage to the INSTALL.md
+- Added more detail verbiage to the README.md
+- Added new `TS_USAGE.md` file.  
+    - Troubleshooting and Usage Questions.
+    - To be updates as more feedback is received.
 
 
 ---
@@ -423,16 +424,36 @@ configuration:
   collateral:
     enabled: true
     node_count: 2
-  report_estimates:
-    - .1
-    - .5
-    - 1
-    - 3
-    - 5
-    - 10
-    - 50
-    - 100
+  report:
+    enabled: true
+    estimates:
+      - .10
+      - .50
+      - 1
+      - 3
+      - 5
+      - 10
+      - 50
+      - 100
+      - 34000
 ```
+
+The following pieces of the `config.yaml` must be changed to match your **specific** configuration.
+- node_username
+- gmail_acct
+- gmail_token
+- mms_recipients
+    - *If you are planning on using the same email address to accept the incoming push requests from your node also as your recipient email, you **must** put it in the recipients list here as well; otherwise the program will exit with a failure.*
+- node_name
+- lb
+    - *If you don't know the LB fully qualified domain name (FQDN), you may need to ask in the community for this FQDN.  It isn't listed here for privacy reasons.*
+- node_ip
+
+The following elements you might want to change from `false` to `true`
+- under the `healthcheck:` section `enabled: true`
+- under the `collateral:` section `enabled: true`
+- under the `report:` section `enabled: true`
+- same for `splits` but this is only if you need/want the functionality (see below)
 
 #### Configuration file parameter details <a name="parms"></a>
 

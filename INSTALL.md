@@ -8,6 +8,7 @@
     1. [Setup Gmail](#gmail)
     1. [Node Installation](#nodeinstall)
     1. [Prerequisites](#prereq)
+    1. [Setup correct Timezone](#clocksetup)
     1. [Operator Node Software Installation](#doinstall)
     1. [Post configuration Testing](#tests)
 1. [CRON setup](#cron)
@@ -112,16 +113,77 @@ nodeuser@constellation-node:~/# pwd
 nodeuser@constellation-node:~/#
 ```
 
+#### TIMEZONE <a name="clocksetup">
+3. Make sure our node *date/time* is setup properly within our own timezone 
+```
+date
+```
+This example will fix to EST verses UTC
+```
+nodeuser@constellation-node:/# date
+Sun Jul 25 13:04:15 UTC 2021
+```
+First get the correct timezone long name...
+```
+timedatectl list-timezones
+```
+results
+```
+nodeuser@constellation-node:/# timedatectl list-timezones
+Africa/Abidjan
+Africa/Accra
+Africa/Addis_Ababa
+Africa/Algiers
+Africa/Asmara
+Africa/Bamako
+Africa/Bangui
+Africa/Banjul
+Africa/Bissau
+Africa/Blantyre
+Africa/Brazzaville
+Africa/Bujumbura
+Africa/Cairo
+Africa/Casablanca
+Africa/Ceuta
+Africa/Conakry
+Africa/Dakar
+Africa/Dar_es_Salaam
+[...]
+```
+This will be a pain to sift through, so if you are in `America` or `Europe` (as an example)... You can narrow down your search this way...
+```
+nodeuser@constellation-node:/# timedatectl list-timezones | grep America
+```
+or
+```
+nodeuser@constellation-node:/# timedatectl list-timezones | grep Europe
+```
+Mark down the closest match to your location...
+
+Now we can change our time (our example case we want EST.  Probably different for you?)
+
+> If you are not already `root` this may require you prefix the command with `sudo`.
+
+```
+timedatectl set-timezone America/New_York
+```
+Check again
+```
+nodeuser@constellation-node:/# date
+```
+
 ## READY TO INSTALL THE PROGRAM <a name="doinstall">
 
-3. Grab the latest release of the program from the github (here) repository: `releases` section
+> In this section, if you see multiple lines of `commands` they are meant to be run separately, one at a time
+
+4. Grab the latest release of the program from the github (here) repository: `releases` section
 
 **MAKE SURE YOU DOWNLOAD THE CORRECT VERSION (LATEST).** (example shows v1.0b)
 ```
 wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v1.0b.tar.gz
 ```
 
-4. Verify that you have the file `vX.X.tar.gz` (where X.X is the version)
+5. Verify that you have the file `vX.X.tar.gz` (where X.X is the version)
     - *ll is letter `L` not number `1`*
 ```
 nodeuser@constellation-node:~# ll
@@ -135,13 +197,13 @@ nodeuser@constellation-node:~#
 ```
 > **You will see `v1.0b.tar.gz` as a new file**
 
-5. Extract the contents, which will create a dedicated directory
+6. Extract the contents, which will create a dedicated directory
 ```
 tar -xvf v1.0b.tar.gz
 ```
 
-6. Verify the extraction.  
-    - The content results might not match up perfectly with below, important part is to make sure the `constellation-node-automation-1.0b` is there.
+7. Verify the extraction.  
+    - The content results might not (probably won't) match up perfectly with below, important part is to make sure the **`constellation-node-automation-1.0b`** where the `1.0b` matches the current version no. is there.
 ```
 nodeuser@constellation-node:~# ll
 total 64
@@ -154,13 +216,16 @@ drwxrwxr-x 5 root root  4096 Jul 16 13:11 constellation-node-automation-1.0b/
 nodeuser@constellation-node:~#
 ```
 
-7. *Optional*: Verify the contents
+8. *Optional*: Verify the contents
 ```
 cd constellation-node-automation-1.0b
 ll
 ```
 
-File structure should appear as follows:
+File structure should appear as follows:  
+
+> Note: *You will not see it this way, but you can navigate around to check that it is correct*
+
 ```
 automation
 ├── dag_count.log
@@ -182,13 +247,18 @@ automation
 │   │   ├── dag_count.log
 ```
 
-8. Copy the `config.example.yaml` file to `config.yaml`.  *This will allow you to keep the example handy.*
+9. Copy the `config.example.yaml` file to `config.yaml`.  *This will allow you to keep the example handy.*
 ```
 cd ~/constellation-node-automation-1.0b/configs/
 cp config.example.yaml config.yaml
 ```
 
-9. Update the `config.yaml` with the correct settings from the configuration section of the [README](README.md).  *Recommendation: Open the README at the same time in a different browser window.*
+### IMPORTANT: REFER TO THE [README.md](README.md) and follow the link to the CONFIGURATION section. 
+
+Open the README.md in a separate window for ease of use!
+
+10. Update the `config.yaml` with the correct settings from the configuration section of the [README](README.md).  *Recommendation: Open the README at the same time in a different browser window.*
+
     1. For ease of use, we will use `nano` for the next steps.  If you are savvy already, make the necessary changes using our favorite Linux editor.
         1. Open the configuration file for editing
             ```
@@ -204,9 +274,9 @@ cp config.example.yaml config.yaml
             cd ~
             ```
 
-10. Learn the usage and all necessary details from the [README](README.md).
+11. Learn the usage and all necessary details from the [README](README.md).
 
-11. ***Optional***: Clean up your file original install tar package file, to preserve space.
+12. ***Optional***: Clean up your file original install tar package file, to preserve space.
 ```
 cd ~
 rm v1.0b.tar.gz
@@ -214,7 +284,7 @@ rm v1.0b.tar.gz
 
 ### QUICK TESTS <a name="tests">
 
-12. Give the script a quick spin... 
+13. Give the script a quick spin... 
 
 ```
 cd ~/constellation-node-automation-1.0b/
@@ -226,7 +296,7 @@ After a few seconds to waiting... alert message will appear on the screen!
 cd ~/constellation-node-automation-1.0b/
 python3 automation.py alert 
 ```
-After a few seconds to waiting... the prompt should return and an MMS should finally appear on your phone!
+After a few seconds to waiting... the prompt should return and an MMS should finally appear on your phone (and/or email)!
 
 [back to beginning of document](#top)
 
@@ -250,6 +320,8 @@ Add the following to the bottom of the file.  see [usage section](#usage) for de
 
 > Leave the `[...]` out, it is just an indication that other code is probably seen above (or below) the line you need to enter.
 
+## Change `nodeuser` to whatever your username is!
+
 ```
 [...]
 @reboot /usr/bin/python3 /nodeuser/constellation-node-automation-1.0b/automation.py auto >> ~/cron.log 2>&1
@@ -258,6 +330,7 @@ Add the following to the bottom of the file.  see [usage section](#usage) for de
 Now we have to start the program manually, because you don't want to have to actually reboot.  The first alert will not appear until the designated interval:
 
 ```
+nodeuser@constellation-node:~# nohup python3 automation.py auto &
 nodeuser@constellation-node:~# nohup python3 automation.py auto &
 ```
 

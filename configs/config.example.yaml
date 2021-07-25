@@ -1,5 +1,5 @@
 # DAG Node Alerting Program
-# v1.0b
+# v1.1b
 # Author: hgtp://netmet
 # ========================
 #
@@ -42,8 +42,8 @@ configuration:
     int_minutes: 15
   splits:
     enabled: false
-    split1: 0.7
-    split2: 0.3
+    split1: .7
+    split2: .3
   collateral:
     enabled: false
     node_count: 1 
