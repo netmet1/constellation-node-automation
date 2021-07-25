@@ -9,6 +9,7 @@
     1. [Node Installation](#nodeinstall)
     1. [Prerequisites](#prereq)
     1. [Operator Node Software Installation](#doinstall)
+    1. [Post configuration Testing](#tests)
 1. [CRON setup](#cron)
 1. [Upgrade](#upgrade)
 
@@ -121,6 +122,7 @@ wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/
 ```
 
 4. Verify that you have the file `vX.X.tar.gz` (where X.X is the version)
+    - *ll is letter `L` not number `1`*
 ```
 nodeuser@constellation-node:~# ll
 total 64
@@ -138,7 +140,8 @@ nodeuser@constellation-node:~#
 tar -xvf v1.0b.tar.gz
 ```
 
-6. Verify the extraction
+6. Verify the extraction.  
+    - The content results might not match up perfectly with below, important part is to make sure the `constellation-node-automation-1.0b` is there.
 ```
 nodeuser@constellation-node:~# ll
 total 64
@@ -146,7 +149,7 @@ drwxr-xr-x 3 root root  4096 Jul 20 19:08 ./
 drwxr-xr-x 6 root root  4096 Jul 20 19:00 ../
 -rwxr-xr-x 1 root root  2498 Mar  2 10:59 config-security
 drwxr-xr-x 4 root root  4096 Jul 19 12:45 constellation
-drwxrwxr-x 5 root root  4096 Jul 16 13:11 constellation-node-automation-0.4b/
+drwxrwxr-x 5 root root  4096 Jul 16 13:11 constellation-node-automation-1.0b/
 -rw-r--r-- 1 root root 20196 Jul 20 19:08 v1.0b.tar.gz
 nodeuser@constellation-node:~#
 ```
@@ -208,6 +211,22 @@ cp config.example.yaml config.yaml
 cd ~
 rm v1.0b.tar.gz
 ```
+
+### QUICK TESTS <a name="tests">
+
+12. Give the script a quick spin... 
+
+```
+cd ~/constellation-node-automation-1.0b/
+python3 automation alert -p
+```
+After a few seconds to waiting... alert message will appear on the screen!
+
+```
+cd ~/constellation-node-automation-1.0b/
+python3 automation alert 
+```
+After a few seconds to waiting... the prompt should return and an MMS should finally appear on your phone!
 
 [back to beginning of document](#top)
 
