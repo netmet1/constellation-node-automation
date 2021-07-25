@@ -218,13 +218,13 @@ rm v1.0b.tar.gz
 
 ```
 cd ~/constellation-node-automation-1.0b/
-python3 automation alert -p
+python3 automation.py alert -p
 ```
 After a few seconds to waiting... alert message will appear on the screen!
 
 ```
 cd ~/constellation-node-automation-1.0b/
-python3 automation alert 
+python3 automation.py alert 
 ```
 After a few seconds to waiting... the prompt should return and an MMS should finally appear on your phone!
 
