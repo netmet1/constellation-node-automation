@@ -113,7 +113,14 @@ nodeuser@constellation-node:~/# pwd
 nodeuser@constellation-node:~/#
 ```
 
-#### TIMEZONE <a name="clocksetup">
+### TIMEZONE <a name="clocksetup">
+
+#### INFORMATION WAS RECEIVED THAT RUNNING YOUR NODE IN `UTC` IS BEST PRACTICE, SO NOTE OF CAUTION IF YOU WANT TO CHANGE THE NODE'S TIMEZONE.
+
+> New future version will probably add the option to setup your specific timezone in the `config.yaml` file.
+
+If this concerns you, skip to step #4.
+
 3. Make sure our node *date/time* is setup properly within our own timezone 
 ```
 date
