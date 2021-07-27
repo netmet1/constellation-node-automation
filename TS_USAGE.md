@@ -1,4 +1,4 @@
-# COMMON COMMANDS AND TROUBLESHOOTING
+# COMMON COMMANDS AND TROUBLESHOOTING <a name="top">
 
 ## TABLE OF CONTENTS
 
@@ -10,15 +10,22 @@
 1. [My Date/Time is Wrong on my Alerts?](#timezone)
 1. [How do I STOP the program?](#stop)
 1. [What if error is not on this page?](#all_other_issues)
+1. [Using the adminauto.sh script](#adminauto)
 
 ---
 
 ### HOW DO I KNOW IF MY PROGRAM IS RUNNING? <a name="running">
 
 ```
+pgrep -f "python3.*automation.py.*auto"
+```
+If the program is running properly, this will come back with a number that represents the process ID number for the automation.py program.
+or
+```
 ps -aux | grep automation
 ```
 If the program is running properly, this command should show you 2 lines of results
+
 ```
 nodeuser@constellation-node:~/# ps -aux | grep automation
 root     18920  0.0  0.0  14864   988 pts/1    S+   09:01   0:00 grep --color=auto automation
@@ -147,6 +154,15 @@ We are setup to use UTC, and this is *probably* not good.  See the [INSTALL.md c
 What if you want to stop the program because you don't want it running?
 
 ```
+pgrep -f "python3.*automation.py.*auto"
+```
+results
+```
+30878
+```
+or 
+
+```
 ps -aux | grep automation
 ```
 results
@@ -175,6 +191,10 @@ Please open an issue on this repo and supply your `nohup.out` file or `cron.log`
 
 [back to beginning of document](#top)
 
+## ADMINAUTO.SH <a name="adminauto">
+Please see the [README.md](README.md) to details on using this helpful script.  You will find a link in the Table of Contents.
+
+[back to beginning of document](#top)
 ---
 Thank you!
 hgtp://netmet

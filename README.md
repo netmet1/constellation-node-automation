@@ -7,6 +7,7 @@
 1. [Changes](#changes)
 1. [Features](#features)
 1. [Usage](#usage)
+    - [Understanding the `adminauto.sh` Helper Script](#adminauto)
     - [Start Scheduled Alert/Report](#schedule_alert)
     - [Send Out a manual Alert](#send_alert)
     - [Print alert to CLI](#send_alert)
@@ -47,23 +48,16 @@ A Python automation and status program to run on your node.  It will send you al
 
 ---
 
-##### Version: v1.1b
+##### Version: v1.2b
 
 ---
 ### CHANGES <a name="changes"></a>
 
-- Fix first time run bug
-    - The first time the program is run, the `dag_count.log` that is responsible for holding the history of alerts and which is referenced when log searches are done: either or accounting or taxes, etc. is **empty**.  This should only occur the first time **ever** that the program is run.  When the program attempts to review the file... It was reading an empty file and erroring out.
-    - Created a try/except to populate the file if it is empty with the date/time and current DAG price before continuing.
-- The `config.example.yaml` file was missing new `v1.0b` entries.  
-    - This would cause the program to crash on start.
-    - Fixed the `config.example.yaml` file.
-- Added TimeZone checking and configuration instructions to the INSTALL.md
-- Added more detail verbiage to the INSTALL.md
-- Added more detail verbiage to the README.md
-- Added new `TS_USAGE.md` file.  
-    - Troubleshooting and Usage Questions.
-    - To be updates as more feedback is received.
+- Bug fix for health check
+    - Originally the health check was only listening for ConnectionError messages.  It would error out (properly) with an exception for all other errors.
+    - Updated to identify ConnectionErrors and ReadTimeout errors, all other errors will be processed as unknown and not exit the program.
+- Added `adminauto.sh` bash script
+    - This is a simple script (see ToC of this README.md for details) that will allow you to `start`, `stop`, and `restart` the automation program without having to remember all the proper command syntax. 
 
 
 ---
@@ -97,6 +91,7 @@ A Python automation and status program to run on your node.  It will send you al
 - Log DAG accumulation and pricing history
     - Print or email details for date or date range
     - CSV attachment via email
+
 
 ## USAGE <a name="usage"></a>
 
@@ -378,6 +373,44 @@ HEALTH STATUS REPORT
 lb.constellationnetwork.io: Healthy
 Endpoint <your_ip_here>: Error
 Codes: (200, 502)
+```
+
+## ADMINAUTO.SH HELPER SCRIPT <a name="adminauto">
+The program now includes a script called `adminauto.sh` to help make it easier to `start`, `restart` and `stop` the program from running quickly and easily.
+**THIS IS ONLY FOR USAGE WITH THE `auto` option.**
+
+| command | Parameters | 
+| ------- | :-------: | 
+| . adminauto.sh | `-h` `-s` `-r` `-k` | 
+
+> The command should always start with the `.` in the front of the command
+
+```
+Node Operator Automation Helper Script
+--------------------------------------
+usage: . admin_auto.sh [-h] [-s] [-r] [-k]
+
+THIS IS FOR USE WITH THE "AUTO" ARGUMENT (auto run)
+This does not deal with single alerts, reports, or logs
+
+This does not deal with the program running locally in the current user session
+without the "nohup" command.  See README.md
+
+positional arguments:
+  -h        show this help message
+  -s        start the automation program if not running
+            this will start the program in the background
+  -r        stop the program, then restart it
+  -k        stop the program from running in the background
+            this will find and kill the automation program process
+
+example usage:
+~# . admin_auto.sh -s
+This command will start the node operator automation program in the background with the "auto" variable.
+
+~#: . admin_auto.sh -r
+This command will find the process that is running and "kill" it (stop it).
+then it will restart it with the auto command in the background (-s).
 ```
 
 ---

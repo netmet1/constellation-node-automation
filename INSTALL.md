@@ -115,9 +115,9 @@ nodeuser@constellation-node:~/#
 
 ### TIMEZONE <a name="clocksetup">
 
-#### INFORMATION WAS RECEIVED THAT RUNNING YOUR NODE IN `UTC` IS BEST PRACTICE, SO NOTE OF CAUTION IF YOU WANT TO CHANGE THE NODE'S TIMEZONE.
+#### RUNNING YOUR NODE IN `UTC` IS BEST PRACTICE, SO NOTE OF CAUTION IF YOU WANT TO CHANGE THE NODE'S TIMEZONE.
 
-> New future version will probably add the option to setup your specific timezone in the `config.yaml` file.
+> New future version will add the option to setup your specific timezone in the `config.yaml` file.
 
 If this concerns you, skip to step #4.
 
@@ -336,8 +336,15 @@ Add the following to the bottom of the file.  see [usage section](#usage) for de
 
 Now we have to start the program manually, because you don't want to have to actually reboot.  The first alert will not appear until the designated interval:
 
+### OPTION 1
+use the adminauto.sh script included with this program
 ```
-nodeuser@constellation-node:~# nohup python3 automation.py auto &
+nodeuser@constellation-node:~# . adminauto.sh -s
+```
+
+#### OPTION 2 
+start the program manually...
+```
 nodeuser@constellation-node:~# nohup python3 automation.py auto &
 ```
 

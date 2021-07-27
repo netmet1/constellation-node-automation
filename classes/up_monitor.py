@@ -29,8 +29,6 @@ class UpMonitor():
             self.health_lb = 90000
         else:
              self.health_lb = lb_status.status_code
-        finally:
-             pass
 
         try:
             node_status = requests.get(self.config.node_url, timeout=10)
