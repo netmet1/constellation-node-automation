@@ -1,4 +1,3 @@
-from typing import final
 import requests
 from datetime import datetime, timedelta, time
 
