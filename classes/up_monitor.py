@@ -1,3 +1,4 @@
+from typing import final
 import requests
 from datetime import datetime, timedelta, time
 
@@ -23,15 +24,27 @@ class UpMonitor():
             lb_status = requests.get(self.config.lb_url, timeout=10)
         except requests.exceptions.ConnectionError:
             self.health_lb = 502
+        except requests.exceptions.ReadTimeout:
+            self.health_lb = 408
+        except:
+            self.health_lb = 90000
         else:
              self.health_lb = lb_status.status_code
+        finally:
+             pass
 
         try:
             node_status = requests.get(self.config.node_url, timeout=10)
         except requests.exceptions.ConnectionError:
             self.health_node = 502
+        except requests.exceptions.ReadTimeout:
+            self.health_node = 408
+        except:
+            self.health_lb = 90000
         else:
             self.health_node = node_status.status_code
+        finally:
+            pass
 
 
     def build_health_msg(self):
@@ -41,7 +54,7 @@ class UpMonitor():
                "--------------------\n"
                f"{self.config.lb}: ")
 
-        results = (self.health_lb,self.health_node)
+        results = [self.health_lb,self.health_node]
 
         for n in range(0,2):
             if n == 1:
@@ -50,6 +63,8 @@ class UpMonitor():
                 msg += "Error"
             else:
                 msg += "Healthy"
+            if results[n] == 90000:
+                results[n] = "unknown"
 
         msg += f"\nCodes: {results}\n"
 
