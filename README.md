@@ -48,16 +48,13 @@ A Python automation and status program to run on your node.  It will send you al
 
 ---
 
-##### Version: v1.2b
+##### Version: v1.3b
 
 ---
 ### CHANGES <a name="changes"></a>
 
-- Bug fix for health check
-    - Originally the health check was only listening for ConnectionError messages.  It would error out (properly) with an exception for all other errors.
-    - Updated to identify ConnectionErrors and ReadTimeout errors, all other errors will be processed as unknown and not exit the program.
-- Added `adminauto.sh` bash script
-    - This is a simple script (see ToC of this README.md for details) that will allow you to `start`, `stop`, and `restart` the automation program without having to remember all the proper command syntax. 
+- Added version information to the `--help, -h` option.
+- Some code refactoring
 
 
 ---

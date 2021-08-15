@@ -1,0 +1,155 @@
+#!/bin/bash
+# ====================================
+# 
+#  DAG Automation Administration Script
+#  for installing, upgrading, starting,
+#  stopping, and restarting the 
+#  constellation node automation script
+#  
+#  last update:  2021-08
+#  author:  hgtp://netmet
+#
+#  disclaimer:  I do not work for 
+#  Constellation Network however I am
+#  a proud member of the community and
+#  this is just a script to help the 
+#  community.
+#
+# ==================================== 
+
+red=$(tput setaf 1)
+grn=$(tput setaf 2)
+yel=$(tput setaf 3)
+blu=$(tput setaf 4)
+mag=$(tput setaf 5)
+cyn=$(tput setaf 6)
+wht=$(tput setaf 7)
+b_red=$(tput setb 1)
+b_grn=$(tput setb 2)
+b_yel=$(tput setb 3)
+b_blu=$(tput setb 4)
+b_mag=$(tput setb 5)
+b_cyn=$(tput setb 6)
+b_wht=$(tput setb 7)
+clr=$(tput sgr0)
+bld=$(tput bold)
+start_under=$(tput smul)
+end_under=$(tput rmul)
+AUTOMATION_VERSION="2.0"
+
+case "$1" in
+    -i) action="install";;
+    -u) action="upgrade";;
+    -s) action="start";;
+    -r) action="restart";;
+    -k) action="kill";;
+    -h) action="help";;
+    *) action="none";;
+esac
+
+if [[ $action = "help" ]]; then
+    echo
+    printf "${grn}${start_under}Node Operator Automation Helper Script${end_under}\n"
+    printf "${wht}${b_mag}Version: ${bld}1.3b${clr}\n\n"
+    printf "${yel}${bld}usage: adminauto [-h] [-i] [-u] [-s] [-r] [-k]${clr}\n\n"
+    printf "${grn}${bld}THIS IS FOR USE WITH THE \"AUTO\" ARGUMENT (auto run)${clr}\n"
+    printf "${grn}This does not deal with single alerts, reports, or logs\n\n"
+    printf "This does not deal with the program running locally in the current user session"
+    printf "without the \"nohup\" command.  See README.md\n\n"
+    printf "${bld}${start_under}Positional arguments${end_under}:${clr}\n"
+    printf "${bld}${yel} -h${clr}${wht}        show this help message\n\n"
+    printf "${bld}${yel} -i${clr}${wht}        first time installation (otherwise you should use -u for upgrade)\n"
+    printf "${bld}${yel} -u${clr}${wht}        upgrade automation script.  If an installation is not detected, you\n"
+    printf "           receive a warning\n\n"
+    printf " =========================== \n\n"
+    printf "${bld}${yel} -s${clr}${wht}        start the automation program if not running\n"
+    printf "           this will start the program in the background\n"
+    printf "           ${red}WARNING:${wht} beware of starting multiple instances of the program\n"
+    printf "           this can cause you to get duplicate alerts at the same moment\n"
+    printf "           in time.\n"
+    printf "${bld}${yel} -r${clr}${wht}        stop the program, then restart it\n"
+    printf "${bld}${yel} -k${clr}${wht}        stop the program from running in the background\n"
+    printf "            this will find and kill the automation program process\n\n"
+    printf "${grn}${start_under}example usage${end_under}:\n"
+    printf "${yel}~# adminauto -s\n"
+    printf "${cyn}This command will start the node operator automation program in the background with the \"auto\" variable.\n\n"
+    printf "${yel}~#: adminauto -r\n"
+    printf "${cyn}This command will find the process that is running and \"kill\" it (stop it).\n"
+    printf "then it will restart it with the auto command in the background (-s).\n\n${clr}"
+    exit 0
+elif [[ $action = "none" ]]; then
+    exit 0
+fi
+
+prod_version=$(curl -s https://raw.githubusercontent.com/StardustCollective/validator-node-install/master/dag | grep "AUTOMATION_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}')
+if [[ $webVer > $AUTOMATION_VERSION ]]; then
+        echo
+        printf "${grn} New version available! (${pnk}$prod_version${grn})"
+        read -e -p "Would you like to upgrade the automation script? y or n [n]: " confirm
+        if [[ $confirm = [Nn] || -z $confirm ]]; then
+            wget https://raw.githubusercontent.com/StardustCollective/validator-node-install/master/dag -O /usr/local/bin/adminauto >/dev/null 2>&1
+            printf "${grn} dag ${blu}utility updated${clr}"
+            echo
+            exec "/usr/local/bin/dag";
+            exit 1
+        fi
+fi
+
+read -e -p  "$action the automation script: y or n [y] " confirm
+
+if [[ $confirm = [Yy] || -z $confirm ]]; then
+    auto_process="pgrep -f \"python3.*automation.py.*auto\""
+    start_command="nohup python3 automation.py auto"
+    invalid_error="Invalid request received\nno action taken...\n"
+    already_error="The Automation Program Doesn't seem to be running already.\nNo Actions Needed...\n\n"
+
+    echo "------"
+    echo "This script is taking the following action = $action"
+
+    process=$(eval "$auto_process")
+    case "$action" in
+        start) 
+            if [[ -z $process ]]; then
+                echo "starting..."
+                $start_command &
+                process=$(eval "$auto_process")
+                sleep 2
+                printf "New Automation Program Process: $process has been started.\nAction: Successful\n\n"
+            else
+                printf "Automation Program Process: $process is already running.  see --help\n\n"
+            fi
+            ;;
+        restart) action="restart"
+            if [[ -z $process ]]; then
+                printf "$already_error"
+            else
+                echo "Removing the Automation Process: $process"
+                pkill -f 'python3.*automation.py.*auto' > /dev/null 2>&1
+                $start_command & > /dev/null 2>&1
+                process=$(eval "$auto_process")
+                sleep 2
+                printf "New Automation Program Process: $process has been started.\nAction: Successful\n\n" 
+            fi       
+            ;;
+        kill) action="kill"
+            if [[ -z $process ]]; then
+                printf "$already_error"
+            else
+                echo "Removing the Automation Process: $process"
+                pkill -f 'python3.*automation.py.*auto'
+                sleep 2
+                echo "Automation Program Process: $process has been stopped/removed/killed.\nAction: Successful\n\n"
+            fi
+            ;;
+        
+        *) printf "$invalid_error"
+            exit 0
+            ;;
+    esac
+else
+    printf "$invalid_error"
+    echo
+fi
+
+printf "DAG, \$DAG it! You node if you node.\n"
+echo 
