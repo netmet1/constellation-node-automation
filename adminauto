@@ -79,7 +79,7 @@ function print_banner()
 
 function print_existing_config_banner()
 {
-    printf "\n${bld}${yel}HIGHLY RECOMMENDED TO REVIEW YOUR CONFIGRUATION.\n" 
+    printf "\n${bld}${yel}HIGHLY RECOMMENDED TO REVIEW YOUR CONFIGURATION.\n" 
     printf "${mag}As features are added, the configuration file may change.\n"
     printf "Unexpected results are more likely than not to occur!${clr}\n"           
     printf "${yel}Do you want to step through your current config\n"
@@ -113,7 +113,7 @@ function prepare_existing_installation()
         dag_statement
         exit 0
     fi
-    printf "${grn}==> Backing up configruation...\n"
+    printf "${grn}==> Backing up configuration...\n"
     cp $HOME/cn_automation/configs/config.yaml /var/tmp/config.automation.tmp
     if [[ ! -d /var/tmp/automation_node_logs ]]; then
         mkdir /var/tmp/automation_node_logs
@@ -127,7 +127,61 @@ function prepare_existing_installation()
 function prepare_new_installation()
 {
     install_type=new
-    printf "${grn}We could ${start_under}not${end_under} find your ${bld}${yel}config.yaml${clr}${grn} file.\n"
+
+    printf "${red}${bld}WARNING${mag} This will do a ${wht}Ubuntu${mag} update to your system\n"
+    printf "and install ${red}if necessary${mag} some necessary packages including...\n"
+    printf "${cyn}Python3, Python Package Manager, and Python Dependency libraries\n${clr}"
+    question="Do you want to continue? "
+    test_yes_no continue_only n
+    if [[ ${userdata[continue_only]} = false ]]; then
+        dag_statement
+        exit 0
+    fi
+
+    printf "\n${yel}==> Peforming a Ubuntu update... (${cyn}please wait${yel})"
+    apt-get update >/dev/null 2>&1
+    printf "\r==> Peforming a Ubuntu update... ${grn}completed            \n"
+
+    printf "${yel}==> Checking for Python3...${clr}"
+    test=$(python3 --version 2>/dev/null | wc -l)
+    if [[ $test = 0 ]]; then
+        printf "\nDid not find Python3 on your system...\n"
+        printf "Installing Python3 this can take\n"
+        printf "a little time... (${cyn}please wait${clr})"
+        apt-get -y install python3 >/dev/null 2>&1
+        printf "\ra little time...  ${grn}success${yel}               \n\n"
+    else 
+        printf "${yel}\r==> Checking for Python3... ${grn}success${yel}\n"
+    fi
+
+    printf "${yel}==> Checking for Python3 Package Manager...${clr}"
+    test=$(pip3 --version 2>/dev/null | wc -l)
+    if [[ $test = 0 ]]; then
+        printf "\nDid not find the package manager on your system...\n"
+        printf "Installing Python Package Manager this can take\n"
+        printf "${red}more than${clr} a little time be patient... (${cyn}please wait${clr})"
+        apt-get -y install python3-pip >/dev/null 2>&1
+        printf "\r${red}more than${clr} a little time be patient... ${grn}success${yel}     \n\m"
+    else 
+        printf "${yel}\r==> Checking for Python3 Package Manager... ${grn}success${yel}\n"
+    fi
+
+    printf "${yel}==> Checking for Automation.py dependencies...${clr}"
+    test=$(pip3 freeze | grep 'pytz' | wc -l)
+    if [[ $test -eq  0 ]]; then
+        printf "\nMissing pytz...\n"
+        printf "Installing, this can take a little time... (${cyn}please wait${clr})"
+        pip3 install pytz >/dev/null 2>&1
+        printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
+    else 
+        printf "${yel}\r==> Checking for Automation.py dependencies... ${grn}success${clr}\n"
+    fi
+
+    echo
+    printf "${bld}${cyn}Installation of system files completed successfully!\n"
+    printf "We are now ready to work on the automation program itself...\n"
+
+    printf "\n${grn}We could ${start_under}not${end_under} find your ${bld}${yel}config.yaml${clr}${grn} file.\n"
     printf "This appears to be a ${bld}${start_under}new${end_under}${clr}${grn} installation\n\n${clr}"
     printf "${red}${bld}WARNING${clr}${yel} Any existing configs and logs will be removed!\n\n"
     question="Continue with ${start_under}${grn}new${end_under}${yel} installation?"
@@ -136,7 +190,6 @@ function prepare_new_installation()
         dag_statement
         exit 1
     fi
-    cp $HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
     perform_installation
 }
 
@@ -147,17 +200,24 @@ function perform_installation()
             printf "==> Cleaning up previous version\n"
             rm -rf $HOME/cn_automation/
             printf "${bld}${yel}Starting Installation...\n${clr}"
-            printf "${grn}==> Downloading new source code... (${red}Please Wait${grn}) "
+            printf "${yel}==> Downloading new source code... (${cyn}Please Wait${yel}) "
             wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}b.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}b.tar.gz >/dev/nul 2>&1
             printf "\r==> Downloading new source code... Done!                  \n"
-            printf "==> Installing... (${red}Please Wait${grn})"
+            printf "==> Installing... (${red}Please Wait"
             tar -xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
-            printf "\r==> Installing... Done!                    \n"
+            printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
+
+            if [[ $install_type = new ]]; then
+                printf "==> Preparing the configuration file for review..."
+                cp $HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
+                printf "\r==> Preparing the configuration file for review... ${grn}done${yel}\n"
+            fi
+
             printf "==> Cleaning up..."
             rm /var/tmp/v${AUTOMATION_VERSION}b.tar.gz
             mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}b/ $HOME/cn_automation
             # rmdir $HOME/automation/constellation-node-automation-${AUTOMATION_VERSION}b
-            printf "\r==> Cleaning up... Done!\n"
+            printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
 
             warn_suggest=true
             if [[ $install_type = "existing" ]]; then
@@ -300,10 +360,10 @@ function perform_configuration()
     printf "\n${bld}Note:${clr}${bld}${mag} If you chose ${clr}${start_under}no${end_under}${bld}${mag} for the email section, you must "
     printf "choose ${clr}${start_under}yes${end_under}${bld}${mag} here.\nYou must enable one or the other (or both)"
     printf "for the program to function${clr}.\n"
-    value1=$(sed '/mms_recipients/,/constraints/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
+    value1=$(sed '/mms_recipients/,/intervals/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
     question="Are you going to be sending alerts to any MMS phones numbers?"
     test_yes_no mms_enabled
-    value1=$(sed '/mms_recipients/,/constraints/!d' /var/tmp/config.automation.tmp | grep "-" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | sed -e 's/ /,/g')
+    value1=$(sed '/mms_recipients/,/intervals/!d' /var/tmp/config.automation.tmp | grep "-" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | sed -e 's/ /,/g')
     add_mms=$value2
     if [[ $value2 = [Yy] ]]; then
         printf "${clr}${yel}Please enter the email address associated with the SMS/MMS recipients\n"
@@ -336,7 +396,7 @@ function perform_configuration()
     printf "${bld}${blu}===> INTERVAL SECTION${clr}\n"
     progress_done
 
-    # node name    
+    # node timezone    
     value1=$(grep time_zone /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     printf "${bld}${mag}What timezone are you currently located. Your server should be\n"
     printf "${bld}${mag}set to UTC (recommended) however, if you want your automation\n"
@@ -347,26 +407,39 @@ function perform_configuration()
     read -e -p "${yel}Enter the time zone for your automation program [${cyn} $value1 ${yel}]: ${clr}" value2
     assign_userdata time_zone
 
-    # interval minutes
-    value1=$(sed '/intervals/,/splits/!d' /var/tmp/config.automation.tmp | grep "int_minutes" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
-    echo
-    read -e -p "${yel}How often do you want to receive alerts in minutes? [${cyn} $value1 ${yel}]: ${clr}" value2
-    assign_userdata int_minutes
+    printf "\n${bld}${mag}You may ${red}ONLY${mag} want health checks.\n"
+    printf "You can disable the automation program alerts here and it will\n"
+    printf "disable this feature here, allowing only for health checks.\n${clr}"
+    value1=$(sed '/intervals/,/healthcheck/!d' /var/tmp/config.automation.tmp | grep "enabled" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    question="Do you want to enable alerts?" 
+    test_yes_no alerts_enabled
+    value1a=$(sed '/intervals/,/healthcheck/!d' /var/tmp/config.automation.tmp | grep "int_minutes" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    value1b=$(grep start_time /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1c=$(grep end_time /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    if [[ $value2 = [Yy] ]]; then
+        # interval minutes
+        echo
+        read -e -p "${yel}How often do you want to receive alerts in minutes? [${cyn} $value1a ${yel}]: ${clr}" value2
+        assign_userdata int_minutes
 
-    # start and stop alerts for the day
-    read -e -p "${yel}Do you want alerts 24/7 on an interval of ${start_under}$value${end_under} minutes? y or n [${cyn} n ${yel}]:${clr} " confirm
-    if [[ $confirm = [Yy] ]]; then
-        userdata[start_time]="'0:00'"
-        userdata[end_time]="'0:00'"
+        # start and stop alerts for the day
+        read -e -p "${yel}Do you want alerts 24/7 on an interval of ${start_under}$value${end_under} minutes? y or n [${cyn} n ${yel}]:${clr} " confirm
+        if [[ $confirm = [Yy] ]]; then
+            userdata[start_time]="'0:00'"
+            userdata[end_time]="'0:00'"
+        else
+            printf "${bld}${mag}Include the single quotes\n"
+            read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to start? [${cyn} $value1b ${yel}]: ${clr}" value2
+            assign_userdata start_time
+            
+            printf "${bld}${mag}Include the single quotes\n"
+            read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to stop? [${cyn} $value1c ${yel}]: ${clr}" value2
+            assign_userdata end_time
+        fi
     else
-        value1=$(grep start_time /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
-        printf "${bld}${mag}Include the single quotes\n"
-        read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to start? [${cyn} $value1 ${yel}]: ${clr}" value2
-        assign_userdata "start_time"
-        value1=$(grep end_time /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
-        printf "${bld}${mag}Include the single quotes\n"
-        read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to stop? [${cyn} $value1 ${yel}]: ${clr}" value2
-        assign_userdata end_time
+        userdata[int_minutes]=$value1a
+        userdata[start_time]=$value1b
+        userdata[end_time]=$value1c
     fi
 
     new_section
@@ -398,7 +471,7 @@ function perform_configuration()
     progress_done
 
     # enable setup health checks
-    value1=$(sed '/healthcheck/,/intervals/!d' /var/tmp/config.automation.tmp | grep "enabled" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    value1=$(sed '/healthcheck/,/splits/!d' /var/tmp/config.automation.tmp | grep "enabled" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
     question="Do you want to enable HEALTH CHECKS?"
     test_yes_no health_enabled
 
@@ -406,7 +479,7 @@ function perform_configuration()
     value1b=$(grep lb_port /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     value1c=$(grep node_ip /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     value1d=$(grep node_port /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
-    value1e=$(sed '/healthcheck/,/intervals/!d' /var/tmp/config.automation.tmp | grep "int_minutes" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    value1e=$(sed '/healthcheck/,/splits/!d' /var/tmp/config.automation.tmp | grep "int_minutes" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
     value1f=$(grep alarm_once /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
 
     if [[ $value2 = [Yy] ]]; then
@@ -491,7 +564,7 @@ function perform_configuration()
     progress_done  
 
     # enable colateral
-    value1=$(sed '/collateral/,/report/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
+    value1=$(sed '/collateral/,/constraints/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
     question="Do you want to enable colllateral?"
     test_yes_no col_enabled
 
@@ -587,7 +660,7 @@ function build_yaml()
     printf "\r${yel}Preparing yaml template... ${grn}Complete${yel}\n"
     printf "Building Template... \n"
 
-    build_yaml_file_items 0 configruation header
+    build_yaml_file_items 0 configuration header
     
     build_yaml_file_items 2 notification header
     build_yaml_file_items 4 node_name item
@@ -605,6 +678,7 @@ function build_yaml()
     build_yaml_file_items 8 mms_recipients list 
 
     build_yaml_file_items 2 intervals header
+    build_yaml_file_items 4 alerts_enabled enabled
     build_yaml_file_items 4 time_zone item
     build_yaml_file_items 4 start_time item
     build_yaml_file_items 4 end_time item
@@ -617,6 +691,7 @@ function build_yaml()
     build_yaml_file_items 4 node_ip item
     build_yaml_file_items 4 node_port item
     build_yaml_file_items 4 int_minutes item
+    build_yaml_file_items 4 alarm_once item
 
     build_yaml_file_items 2 splits header
     build_yaml_file_items 4 splits_enabled enabled
@@ -677,11 +752,11 @@ function clean_up_and_complete()
         if [[ $install_type = new ]]; then
             printf "\n${yel}This was recognized as a new installation ${bld}BUT${clr}\n"
             printf "${yel}You did not accept the new configuration created.\n"
-            printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild configruation.\n"
+            printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild configuration.\n"
         else
             printf "${yel}You did not accept the new configuration created.\n"
             printf "The original config will remain in place.\n"
-            printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild\nconfigruation if necessary.\n" 
+            printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild\nconfiguration if necessary.\n" 
         fi
     else
         printf "${bld}${grn}==> Placing new configuration in place...\n${clr}"

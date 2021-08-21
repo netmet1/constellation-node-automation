@@ -106,9 +106,11 @@ class Config():
         self.split1 = self.config['splits']['split1']
         self.split2 = self.config['splits']['split2']
         self.collateral_nodes = self.config['collateral']['node_count']
+        self.free_dag = self.config['collateral']['free_dag']
         self.report_estimates = self.config['report']['estimates']
         self.alert_interval = self.config['intervals']['int_minutes']
 
+        self.alerts_enabled = self.config["intervals"]["enabled"]
         self.health_enabled = self.config["healthcheck"]["enabled"]
         self.lb = self.config["healthcheck"]["lb"]
         self.node = self.config["healthcheck"]["node_ip"]
@@ -130,7 +132,7 @@ class Config():
 
 
     def setup_flags(self):
-        if self.action == "silent":
+        if self.action == "silent" or self.alerts_enabled == False:
             self.silence_email = True
             self.silence_writelog = False
             self.local = False
@@ -197,6 +199,14 @@ class Config():
             if self.mem_swap_min == -1:
                 self.mem_swap_min = 1000000
  
+        self.free_dag = re.sub('\d', '%d', self.free_dag) # make sure only digits
+        try:
+            int(self.free_dag)
+        except:
+            self.free_dag = 0
+        else:
+            self.free_dag = int(self.free_dag)
+
         try:
             int(self.alert_interval)
         except:
@@ -254,6 +264,9 @@ class Config():
             self.health_int = 5*round(self.health_int/5)
             if self.health_int > 60:
                 self.health_int = 60
+
+        if not isinstance(self.alerts_enabled,bool):
+            self.alerts_enabled = True
 
         if not isinstance(self.mms_enabled,bool):
             self.mms_enabled = True
