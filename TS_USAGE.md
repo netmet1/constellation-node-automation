@@ -122,7 +122,7 @@ All other errors will be consistent with incorrect `config.yaml` settings.  You 
 1. Make sure your GMAIL account is setup to receive requests from your node.  
     - This requires 2-factor authentication
     - This requires you have the **correct** token (password) entered.
-1. Make sure that **even if you are using the same account to receive messages** that your gmail account email address is in the `mms_recipients` list.
+1. Make sure that **even if you are using the same account to receive messages** that your gmail account email address is in the `email_recipients` list.
 1. Make sure your `lb` line has been updated to the correct fully qualified domain name (FQDN) of the constellation's LB.  **Not recommended to use an IP address here because the IP address can change and then you will receive false alerts**.  If you do not know this address, ask someone in the Constellation community (Discord or Telegram).
 1. Make sure you have your `node_ip` correct.
 1. Make sure that all sections that have an option of being `enabled: true` are set to `true` if you want to use those features.

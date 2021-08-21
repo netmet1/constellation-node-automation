@@ -17,6 +17,7 @@
     - [Send Out a manual health check](#send_health)
     - [Send health check to CLI](#send_health)
     - [Example Log Reports](#logs_report)
+        - Includes CSV attachments
     - [Print Log Reports to CLI](#logs_report)
 1. [How to Configure](#config)
     1. [Parameter Description Table](#parms)
@@ -425,10 +426,15 @@ configuration:
     node_username: root
     gmail_acct: gmail_source_email@gmail.com
     gmail_token: gmail_app_password
+    email_recipients:
+      enabled: false
+      - whoever1@whoever.com      
+      - whoever2@whoever.com
     mms_recipients:
-        - 111111111@provider.gateway.net
-        - 222222222@provider.gateway.net
-        - whoever@whoever.com
+      enabled: true
+      add_subject: false
+      - 111111111@provider.gateway.net
+      - 222222222@provider.gateway.net
     node_name: My_Node
   constraints:
     error_max: 20
@@ -473,7 +479,9 @@ The following pieces of the `config.yaml` must be changed to match your **specif
 - gmail_acct
 - gmail_token
 - mms_recipients
-    - *If you are planning on using the same email address to accept the incoming push requests from your node also as your recipient email, you **must** put it in the recipients list here as well; otherwise the program will exit with a failure.*
+- email_recipients
+    - *If you are planning on using the same email address to accept the incoming push requests from your node and also as your recipient email, you **must** put it in the recipients list here as well; otherwise the program will exit with a failure.*
+    - **aka**: `bob@bob.com` sends alerts to `bob@bob.com`.
 - node_name
 - lb
     - *If you don't know the LB fully qualified domain name (FQDN), you may need to ask in the community for this FQDN.  It isn't listed here for privacy reasons.*
@@ -485,42 +493,56 @@ The following elements you might want to change from `false` to `true`
 - under the `report:` section `enabled: true`
 - same for `splits` but this is only if you need/want the functionality (see below)
 
+##### If you do not have email addresses to send notifications to...
+- Make sure to set the `enabled` to false
+- Leave the `list` parameters with the default `whoever` addresses (as placeholders)
+
+##### If you do not have sms/mms addresses to send notifications to...
+- Make sure to set the `enabled` to false
+- Leave the `list` parameters with the default `1111111111` addresses (as placeholders)
+
 #### Configuration file parameter details <a name="parms"></a>
 
-| Section | Parameter | Description | Value type/Format | Default | Required |
-| ------- | :-------: | :---------- | :-----: | :-----: | :---: |
-| **email** | | email parameters needed for program to function properly.
-| - | `gmail_acct` | Gmail account you created or used in the [Setup Gmail](#gmail) section. | - | - | yes
-| - | `gmail_token` | Password you saved in the [App Password](#gmail) section. | - | - | yes
-| - | `mms_recipients` | Making sure you leave the `-` and indentation unchanged, add in your mobile number and/or email addresses where you want to send the reports.  If you only have `1` email, you can remove the extra list item(s).  If you have more than `2`, you can add in as many list entries (starting with a dash) as you like.  **NOTE**: *It is unknown how many requests will be accepted/allowed by Gmail or your mobile provider, so you may need to be cognizant of this when setting up complex lists of email recipients.* | - | - | yes
-| **constraints** |  | This section should only be modified by more advanced users.  It allows you to manipulate several program thresholds.|
-| - | `error_max` | <a name="error_threshold"> How many errors should accumulate in the constellation log file before notifying in an alert.  **Note**: *The constellation log file is configured to roll, so the low error count is justified and only pertains to the current log.* | decimal | `20` | no
-| - | `memory_swap_min` | Low end threshold before alerting that memory or swap is low.  The same decimal is used to check both.  Memory and Swap are independently checked. | decimal | `100000` | no
-| - | `security_check` | Do you want the system to count unauthorized access requests and ports. | boolean | `false` | no
-| - | `uptime_threshold` | Number of days of uptime the server/node/instance has been running.  *Recommendation is to reboot after monthly patches* | int | `30` | no
-| - | `load_threshold` | Percentage of CPU load you want to warn against when threshold is exceeded. *float represented as a percentage* | float | `.7` | no
-| **healthcheck** |  | Features that help setup the health check against the Load Balancer (LB) and End Node (Your Node) |
-| - | `enabled` |  Enable this feature. | boolean | `false` | yes
-| - | `lb` | The fully qualified domain name of the constellation LB. | string |  | yes
-| - | `lb_port` | Which TCP port is your health check using to do a GET for a response code? | int | `9000` | yes
-| - | `node_ip` | The external IP address of your node | string | `X.X.X.X` | yes
-| - | `node_port` | Which TCP port is your health check using to do a GET for a response code from the LB for your IP? | int | `9001` | yes| 
-| - | `int_minutes` | How often do you want to do a health check against the LB?  **no less than 5 or greater than 60**. Must be increments of 5. | int | `30` | no | 
-| - | `alarm_once` | If your End Point or the LB has an issue, only alarm once.  You will get alerted again, when the LB or EndPoint node is reachable again. If `false` as long as the LB or End Point is down, you will receive an alert every X minutes, based on the `int_minutes` setting. Because this is a critical function, it does not adhere to the `start_time` and `end_time` that might be setup for the normal `alert` feature. | boolean | `true` | yes | 
-| **intervals** |  | Setup when you want the alerts to start/stop being pushed to your `mms_email_recipients`. |
-| - | `start_time` | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the program to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
-| - | `end_time` | 24 hour clock notation - local time zone.  When do you want the alerting to stop each day? **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'20:00'` | no
-| - | `int_minutes` | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](INSTALL.md#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
-| **splits** | | This section is an optional configuration. When enabled, this feature will break out rewards/income into percentages between `split1` and `split2`.  When added together this should equal 1 (100%), otherwise calculations will not be accurate.  `Example`: You want to calculate how much of your income will be used for reinvestment (split1) verses taking profits (split2). |
-| - | `enabled` | Enable this feature. | boolean | `false` | yes
-| - | `split1` | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
-| - | `split2` | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
-| **collateral** | | This section is an optional configuration. When enabled, this feature will calculate your current collateral as it relates to the 250K USD requirement for obtaining a new node. |
-| - | `enabled` | Enable this feature. | boolean | `false` | yes 
-| - | `node_count` | ***INCLUDING THIS NODE***. <a name="node_count"></a> How many nodes do you own that you want to include in the collateral calculations?  Note: Until the program couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. AKA: `enabled` with `node_count: 2` means you have 2 nodes all together including this node, that you want to count in your collateral calculations. | int | `1` | if enabled  
-| **reports** | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the `estimates` list provided. |
-| - | `enabled` | Enable this feature. | boolean | `false` |  yes
-| - | `estimates` | $USD that you want to have the $DAG count translated into for the `end of day` report. *Note*: Make sure to leave the `-` in front of each list item.  You can have as many as you deem necessary, or you can remove list items that aren't wanted/needed. *The program will automatically remove estimates that are lower than the @report time USD/DAG price.* | float | `.50`, `1`, `5`, `10`, `100` |  no 
+| Section | Parameter | Sub Param | Description | Value type/Format | Default | Required |
+| ------- | :-------: | :----------  | :---------- | :-----: | :-----: | :---: |
+| **notifications** | | | Email parameters needed for program to function properly.
+|  | `gmail_acct` | | Gmail account you created or used in the [Setup Gmail](#gmail) section. | - | - | yes
+|  | `gmail_token` | | Password you saved in the [App Password](#gmail) section. | - | - | yes
+|  | `email_recipients` | | Parameters necessary for emails to be sent out as notifications | - | - | yes
+|  | | `enabled` | Enable ability to send notifications as email. You will want to change this to `false` (default) if you do not want to send notifications to any email addresses | boolean | `false` | yes
+|  | | `list` | Making sure you leave the `-` and indentation unchanged, add in your email addresses where you want to send the reports.  If you only have `1` email, you can remove the extra list item(s).  If you have more than `2`, you can add in as many list entries (starting with a dash) as you like.  **NOTE**: *It is unknown how many requests will be accepted/allowed by Gmail or your mobile provider, so you may need to be cognizant of this when setting up complex lists of email recipients.* | - | - | yes
+|  | `mms_recipients` | | Parameters necessary for sms/mms notifications to be sent outbound. | - | - | yes
+|  | | `enabled` | Enable ability to send notifications as sms/mms messages. You will want to change this to `false` if you do not want to send notifications to any sms/mms addresses | boolean | `true` | yes
+|  | | `add_subject` | Enable subject header when sending sms/mms notification alerts. **Some email providers (tmobile for example) seem to block or black-hole messages when a subject line is attached?** If you are **not** receiving sms/mms messages, you may want to remove the subject to see if this helps. | boolean | `true` | yes
+|  | | `list` | Making sure you leave the `-` and indentation unchanged, add in your mms/sms email addresses where you want to send the reports.  If you only have `1` sms/mms email, you can remove the extra list item(s).  If you have more than `2`, you can add in as many list entries (starting with a dash) as you like.  **NOTE**: *It is unknown how many requests will be accepted/allowed by Gmail or your mobile provider, so you may need to be cognizant of this when setting up complex lists of email recipients.* | - | - | yes
+| **constraints** |  | | This section should only be modified by more advanced users.  It allows you to manipulate several program thresholds.|
+|  | `error_max` | | <a name="error_threshold"> How many errors should accumulate in the constellation log file before notifying in an alert.  **Note**: *The constellation log file is configured to roll, so the low error count is justified and only pertains to the current log.* | decimal | `20` | no
+|  | `memory_swap_min` | | Low end threshold before alerting that memory or swap is low.  The same decimal is used to check both.  Memory and Swap are independently checked. | decimal | `100000` | no
+|  | `security_check` | | Do you want the system to count unauthorized access requests and ports. | boolean | `false` | no
+|  | `uptime_threshold` | | Number of days of uptime the server/node/instance has been running.  *Recommendation is to reboot after monthly patches* | int | `30` | no
+|  | `load_threshold` |  | Percentage of CPU load you want to warn against when threshold is exceeded. *float represented as a percentage* | float | `.7` | no
+| **healthcheck** |  | | Features that help setup the health check against the Load Balancer (LB) and End Node (Your Node) |
+|  | `enabled` |  | Enable this feature. | boolean | `false` | yes
+|  | `lb` | | The fully qualified domain name of the constellation LB. | string |  | yes
+|  | `lb_port` | | Which TCP port is your health check using to do a GET for a response code? | int | `9000` | yes
+|  | `node_ip` | | The external IP address of your node | string | `X.X.X.X` | yes
+|  | `node_port` | | Which TCP port is your health check using to do a GET for a response code from the LB for your IP? | int | `9001` | yes| 
+|  | `int_minutes` | | How often do you want to do a health check against the LB?  **no less than 5 or greater than 60**. Must be increments of 5. | int | `30` | no | 
+|  | `alarm_once` | |If your End Point or the LB has an issue, only alarm once.  You will get alerted again, when the LB or EndPoint node is reachable again. If `false` as long as the LB or End Point is down, you will receive an alert every X minutes, based on the `int_minutes` setting. Because this is a critical function, it does not adhere to the `start_time` and `end_time` that might be setup for the normal `alert` feature. | boolean | `true` | yes | 
+| **intervals** |  | | Setup when you want the alerts to start/stop being pushed to your `mms_recipients`. |
+|  | `start_time` | | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the program to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
+|  | `end_time` | | 24 hour clock notation - local time zone.  When do you want the alerting to stop each day? **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'20:00'` | no
+|  | `int_minutes` | | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](INSTALL.md#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
+| **splits** | | | This section is an optional configuration. When enabled, this feature will break out rewards/income into percentages between `split1` and `split2`.  When added together this should equal 1 (100%), otherwise calculations will not be accurate.  `Example`: You want to calculate how much of your income will be used for reinvestment (split1) verses taking profits (split2). |
+|  | `enabled` | |Enable this feature. | boolean | `false` | yes
+|  | `split1` | | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
+|  | `split2` | | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
+| **collateral** | | | This section is an optional configuration. When enabled, this feature will calculate your current collateral as it relates to the 250K USD requirement for obtaining a new node. |
+|  | `enabled` | | Enable this feature. | boolean | `false` | yes 
+|  | `node_count` | | ***INCLUDING THIS NODE***. <a name="node_count"></a> How many nodes do you own that you want to include in the collateral calculations?  Note: Until the program couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. AKA: `enabled` with `node_count: 2` means you have 2 nodes all together including this node, that you want to count in your collateral calculations. | int | `1` | if enabled  
+| **reports** | | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the `estimates` list provided. |
+|  | `enabled` | | Enable this feature. | boolean | `false` |  yes
+|  | `estimates` | | $USD that you want to have the $DAG count translated into for the `end of day` report. *Note*: Make sure to leave the `-` in front of each list item.  You can have as many as you deem necessary, or you can remove list items that aren't wanted/needed. *The program will automatically remove estimates that are lower than the @report time USD/DAG price.* | float | `.50`, `1`, `5`, `10`, `100` |  no 
 
 > **Warning**: When entering in the `start_time` and `end_time` parameters, if `start_time` is after the `end_time` the system will revert to defaults (see above), instead of erroring out.
 

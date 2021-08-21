@@ -9,7 +9,7 @@
 #  last update:  2021-08
 #  author:  hgtp://netmet
 #
-#  disclaimer:  I do not work for 
+#  DISCLAIMER:  I do not work for 
 #  Constellation Network however I am
 #  a proud member of the community and
 #  this is just a script to help the 
@@ -17,6 +17,7 @@
 #
 # ==================================== 
 
+blk=$(tput setaf 0)
 red=$(tput setaf 1)
 grn=$(tput setaf 2)
 yel=$(tput setaf 3)
@@ -24,12 +25,12 @@ blu=$(tput setaf 4)
 mag=$(tput setaf 5)
 cyn=$(tput setaf 6)
 wht=$(tput setaf 7)
-b_red=$(tput setb 1)
+b_blu=$(tput setb 1)
 b_grn=$(tput setb 2)
-b_yel=$(tput setb 3)
-b_blu=$(tput setb 4)
+b_cyn=$(tput setb 3)
+b_red=$(tput setb 4)
 b_mag=$(tput setb 5)
-b_cyn=$(tput setb 6)
+b_yel=$(tput setb 6)
 b_wht=$(tput setb 7)
 clr=$(tput sgr0)
 bld=$(tput bold)
@@ -47,17 +48,19 @@ AUTOMATION_VERSION="1.2"
 
 function dag_statement()
 {
-    printf "${clr}DAG, \$DAG it! You node if you node.\n${clr}"
+    printf "${clr}${bld}${cyn}DAG, \$DAG it! You node if you node.\n\n${clr}"
 }
 
 
 function disclaimer()
 {
-    printf "${bld}${red}${start_under}DISCLAIMER - WARNING${clr}\n"
-    printf "Although this ${bld}${yel}AUTOADMIN${clr} script is intended\n"
-    printf "to help and do absolutely ${bld}${grn}${start_under}NO${clr} harm.\n"
-    printf "${bld}** USE AT YOUR OWN RISK **${clr}\n"
-    printf "Install directory: ${bld}${yel}\$HOME/cn_automation${clr}\n"
+    printf "${bld}${b_red}${wht}${start_under}DISCLAIMER - WARNING${clr}\n"
+    printf "\nAlthough this ${bld}${yel}AUTOADMIN${clr} script is intended\n"
+    printf "to help and do absolutely ${bld}${grn}${start_under}NO${clr} harm.\n\n"
+    printf "${bld}${red}** USE AT YOUR OWN RISK **${clr}\n\n"
+    printf "I am not employeed by Constellation.io; however,\n"
+    printf "I ${bld}${mag}love${clr} the community and want to give back.\n"
+    printf "Install directory: ${bld}${yel}\$HOME/cn_automation${clr}\n\n"
 }
 
 
@@ -71,6 +74,21 @@ function print_banner()
     printf "==  ${start_under}CONSTELLATION NODE AUTOMATION SETUP SCRIPT${end_under}  == \n"
     printf "==                                              == \n"
     printf "==================================================${clr} \n"
+}
+
+
+function print_existing_config_banner()
+{
+    printf "\n${bld}${yel}HIGHLY RECOMMENDED TO REVIEW YOUR CONFIGRUATION.\n" 
+    printf "${mag}As features are added, the configuration file may change.\n"
+    printf "Unexpected results are more likely than not to occur!${clr}\n"           
+    printf "${yel}Do you want to step through your current config\n"
+    printf "allowing you to add missing (${wht}new${yel}) info to enable new\n"
+    question="features and make changes as necessary?"
+    test_yes_no continue_only y
+    if [[ ${userdata[continue_only]} = false ]]; then
+        warn_suggest=false
+    fi
 }
 
 
@@ -143,19 +161,11 @@ function perform_installation()
 
             warn_suggest=true
             if [[ $install_type = "existing" ]]; then
-                printf "\n${bld}${yel}HIGHLY RECOMMENDED TO REVIEW YOUR CONFIGRUATION.\n" 
-                printf "${mag}As features are added, the configuration file may change.\n"
-                printf "Unexpected results are more likely than not to occur!${clr}\n"           
-                printf "${yel}Do you want to step through your current config; allowing you to add missing\n"
-                question="(new) info to enable new features and make changes as necessary?"
-                test_yes_no continue_only y
-                if [[ ${userdata[continue_only]} = false ]]; then
-                    warn_suggest=false
-                fi
+                print_existing_config_banner
             fi
 
             if [[ $warn_suggest = true ]]; then
-                printf "\n${bld}${cyn}${start_under}HIGHLY SUGGESTED${end_under}${clr}${yel}\nPLEASE OPENING THE ${start_under}${bld}README.md${clr}${yel} file from the GitHub Repository.\n"
+                printf "\n${bld}${b_cyn}${wht}${start_under}HIGHLY SUGGESTED${end_under}${clr}${yel}\nPLEASE OPENING THE ${start_under}${bld}README.md${clr}${yel} file from the GitHub Repository.\n"
                 printf "Clicking on the ${grn}configuration${yel} section.\nThis will be ${bld}${grn}VERY${clr}${yel} important to make sure you understand\n"
                 printf "the configuration questions about to be asked!\n\n"
                 printf "${clr}"
@@ -234,7 +244,12 @@ function test_yes_no()
 
 function perform_configuration()
 {
+    if [[ $action = configure ]]; then
+       print_existing_config_banner
+    fi
+
     print_banner 1
+
     printf "${yel}==> Starting Configuration...\n"
     printf "${clr}You can just hit <enter> if value is correct.\n"
     printf "${bld}${blu}===> EMAIL SECTION${clr}\n"
@@ -506,6 +521,7 @@ function perform_configuration()
     new_section
     printf "${wht}Default settings are best for a standard node.\n"
     printf "${bld}${blu}===> CONSTRAINTS SECTION\n${clr}"
+    printf "${cyn}Last Configuration Section...\n"
     progress_done
 
     # error constraint
@@ -533,8 +549,6 @@ function perform_configuration()
     value1=$(grep load_threshold /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     read -e -p "${yel}Keep watch of the CPU load on your node? [${cyn} $value1 ${yel}]: ${clr}" value2
     assign_userdata "load_threshold"
-
-    # echo "${userdata[*]}"
 
 }
 
@@ -568,16 +582,10 @@ function build_yaml_file_items()
 
 function build_yaml()
 {
-    printf "\n${bld}${yel}Preparing yaml template...\n"
+    printf "\n${yel}Preparing yaml template..."
     cp $HOME/cn_automation/templates/template.yaml /var/tmp/new_config.yaml
-    printf "Building Template...\n"
-
-    # for debug if needed...
-    # for i in "${!userdata[@]}"
-    # do
-    #     echo "key  : $i"
-    #     echo "value: ${userdata[$i]}"
-    # done
+    printf "\r${yel}Preparing yaml template... ${grn}Complete${yel}\n"
+    printf "Building Template... \n"
 
     build_yaml_file_items 0 configruation header
     
@@ -646,8 +654,10 @@ function build_yaml()
     question="Does this configuration look correct?"
     test_yes_no continue_only n
     if [[ ${userdata[continue_only]} = false ]]; then
-        printf "${cyn}${bld}KEEPING EXISING CONFIG IN PLACE! PLEASE BE TEST\n"
-        printf "TO MAKE SURE EVERYTHING IS WORKING AS EXPECTED.\n"
+        printf "${cyn}${bld}KEEPING EXISING CONFIG IN PLACE!\n"
+        printf "IF CONFIGS ARE MISSING OR INACCURATE DUE TO VERION MISMATCH\n"
+        printf "OR OTHER INCONSISTENCIES... PLEASE STAY DILIGENT, TO AVOID\n"
+        printf "UNNECESSARY TROUBLESHOOTING.\n"
         printf "${red}WARNING:${mag} Program may not run as expected?\n\n${clr}"
         read -e -p "Press <enter> to continue... " enterkey
         new_config=false
@@ -694,8 +704,11 @@ function clean_up_and_complete()
     rm /var/tmp/new_config.yaml
     
     echo
-    read -e -p "${yel}Ready to continue... press <enter> to continue: " enterkey
-    configure_cron_tab
+    read -e -p "${yel}We are ${bld}${grn}Ready${clr}${yel}... press <enter> to continue: " enterkey
+
+    if [[ $action = install ]]; then
+        configure_cron_tab
+    fi
 
     new_section
     printf "${bld}${blu}===> PREPARE CRON${clr}\n"
@@ -709,7 +722,7 @@ function clean_up_and_complete()
     printf "${yel}Do you want to start the automation script now?\n"
     printf "${cyn}You will be asked to ${wht}kill${cyn} any existing automation programs\n"
     printf "${cyn}first then to ${wht}start${cyn} the automation program.\n"
-    question="y or n "
+    question="Stop existing and start new? y or n "
     test_yes_no continue_only n
     if [[ ${userdata[continue_only]} = true ]]; then
         printf "${grn}Stopping existing automation scripts...${clr}\n"
@@ -814,12 +827,14 @@ function configure_cron_tab()
 
 }
 
+
 function check_version_for_upgrade()
 {
     printf "\n${yel}Checking automation script and program versioning... (${red}please wait${yel}) "
     prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/v1.3_feature_install_package/adminauto | grep "AUTOMATION_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
     printf "\r${yel}Checking automation program and autoadmin script versioning... ${grn}complete!                   "
     printf "\nLatest Version: ${blu}${bld}$prod_version${clr}  ${grn}Current Version: ${blu}${bld}$AUTOMATION_VERSION${clr}\n\n"
+    skip_version_continue=false
 
     if [[ $prod_version > $AUTOMATION_VERSION ]]; then
             printf "${red}New version available! ${clr}(${cyn}${bld}v$prod_version${clr})${grn}\n"
@@ -846,6 +861,8 @@ function check_version_for_upgrade()
                     printf "Unexpected results are more likely than not to occur! \n${bld}HIGHLY RECOMMENDED TO UPGRADE${clr}\n(Press \"n\" and restart adminauto to upgrade)\n"
                 fi
             fi
+    else
+        skip_version_continue=true
     fi
 }
 
@@ -855,13 +872,14 @@ function print_help_menu()
     echo
     printf "${grn}${start_under}Node Operator Automation Helper Script${end_under}\n"
     printf "${wht}${b_mag}Version: ${bld}${AUTOMATION_VERSION}${clr}\n\n"
-    printf "${yel}${bld}usage: adminauto [-h] [-i] [-c] [-s] [-r] [-k]${clr}\n\n"
+    printf "${yel}${bld}usage: adminauto [-h] [-i] [-c] [-s] [-r] [-k] [-v] ${clr}\n\n"
     printf "${grn}${bld}THIS IS FOR USE WITH THE \"AUTO\" ARGUMENT (auto run)${clr}\n"
     printf "${grn}This does not deal with single alerts, reports, or logs\n\n"
     printf "This does not deal with the program running locally in the current user session"
     printf "without the \"nohup\" command.  See README.md\n\n"
     printf "${bld}${start_under}Positional arguments${end_under}:${clr}\n"
     printf "${bld}${yel} -h${clr}${wht}        show this help message\n\n"
+    printf "${bld}${yel} -v${clr}${wht}        show program's current version\n\n"
     printf "${bld}${yel} -i${clr}${wht}        first time installation (otherwise you should use -u for upgrade)\n"
     # printf "${bld}${yel} -u${clr}${wht}        upgrade automation script.  If an installation is not detected, you\n"
     # printf "           receive a warning\n"
@@ -889,20 +907,28 @@ function print_help_menu()
 case "$1" in
     -i) action="install";;
     -u) action="upgrade";;
-    -c) action="configure";;
+    -c) action="configure"
+        # remove cron step
+        config_steps=`expr $config_steps - 1`
+        ;;
     -s) action="start";;
     -r) action="restart";;
     -k) action="kill";;
-    -h) action="help";;
-    *) action="none";;
+    -h) action="help"
+        print_help_menu
+        ;;
+    -v) action="version"
+        print_banner 1
+        
+        printf "${wht}${b_mag}ADMINAUTO VERSION: ${bld}${yel}${AUTOMATION_VERSION}${clr}\n"
+        dag_statement
+        exit 0
+        ;;
+    *) action="none"
+        dag_statement
+        exit 0
+        ;;
 esac
-
-if [[ $action = "help" ]]; then
-    print_help_menu
-elif [[ $action = "none" ]]; then
-    dag_statement
-    exit 0
-fi
 
 print_banner 1
 disclaimer
@@ -956,9 +982,12 @@ if [[ ${userdata[continue_only]} == true ]]; then
 
         install) 
             check_version_for_upgrade
-
-            question="Continue?"
-            test_yes_no continue_only n
+            if [[ skip_version_continue = false ]]; then
+                question="Continue?"
+                test_yes_no continue_only n
+            else
+                userdata[continue_only]=true
+            fi
             if [[ ${userdata[continue_only]} = true ]]; then
                 if [[ -f $HOME/cn_automation/configs/config.yaml ]]; then
                     prepare_existing_installation
@@ -991,5 +1020,7 @@ fi
 
 cd $HOME
 print_banner 1
+printf "\n${bld}${grn}${action^^} DONE!\n${clr}\n"
+printf "${bld}${mag}Hope you enjoy the automation alerting program!\n"
 dag_statement
 echo 
