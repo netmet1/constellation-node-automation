@@ -13,14 +13,21 @@
 # 
 
 configuration:
-  email:
+  notifications:
     node_username: root
     gmail_acct: gmail_source_email@gmail.com
     gmail_token: gmail_app_password
+    email_recipients:
+      enabled: false
+      list:
+        - whoever1@whoever.com      
+        - whoever2@whoever.com
     mms_recipients:
+      enabled: true
+      add_subject: true
+      list:
         - 111111111@provider.gateway.net
         - 222222222@provider.gateway.net
-        - whoever@whoever.com
     node_name: My_Node
   constraints:
     error_max: 20
@@ -37,6 +44,7 @@ configuration:
     int_minutes: 5
     alarm_once: true
   intervals:
+    time_zone: America/New_York
     start_time: '07:00'
     end_time: '20:00'
     int_minutes: 15
@@ -47,6 +55,7 @@ configuration:
   collateral:
     enabled: false
     node_count: 1 
+    free_dag: 0
   report:
     enabled: true
     estimates:
@@ -57,5 +66,3 @@ configuration:
       - 5
       - 10
       - 50
-      - 100
-      - 34000

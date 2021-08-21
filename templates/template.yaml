@@ -1,0 +1,14 @@
+# =======================================================
+# DAG Node Alerting Program
+# Author: hgtp://netmet
+# ========================
+#
+# IMPORTANT:  See the README.md file in the github repo
+#             or root of the DAG Node Alerting script
+#             for more details and understanding of each
+#             of the parameters in the configuration file
+#             INCORRECT settings could leave to not only
+#             unpredictable runtime issues, but it could
+#             lead to inaccurate stats and information.
+# 
+# =======================================================
