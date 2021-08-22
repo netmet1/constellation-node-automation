@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import os
 import yaml
 import re
+import pytz
 
 class Config():
 
@@ -42,7 +43,8 @@ class Config():
 
 
     def setup_dates_times(self):
-        self.current_date = datetime.now().strftime("%Y-%m-%d")
+        self.tz = pytz.timezone(self.config['intervals']['time_zone'])
+        self.current_date = datetime.now(self.tz).strftime("%Y-%m-%d")
 
         try:
             start = datetime.strptime(self.config['intervals']['start_time'], "%H:%M")
@@ -199,8 +201,9 @@ class Config():
             if self.mem_swap_min == -1:
                 self.mem_swap_min = 1000000
  
-        self.free_dag = re.sub('\d', '%d', self.free_dag) # make sure only digits
         try:
+            self.free_dag = re.sub('\D', '', str(self.free_dag)) # make sure only digits
+            self.free_dag = int(self.free_dag)
             int(self.free_dag)
         except:
             self.free_dag = 0
@@ -329,7 +332,7 @@ class Config():
 
     def build_time(self,mins,back_forward,time="now"):
         if time == "now":
-            new_time = datetime.now()
+            new_time = datetime.now(self.tz)
         else:
             new_time = time
         if back_forward == "forward":

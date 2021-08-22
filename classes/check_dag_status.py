@@ -3,6 +3,7 @@ import re
 import requests
 import json
 import math
+import pytz
 from datetime import datetime
 from time import sleep
 
@@ -12,14 +13,11 @@ class CheckDagStatus():
     def __init__(self,config):
 
         self.current_constellation_collateral = 250000
-        
-        self.now = datetime.now()
-        # print(f"CheckDagStatus {now}")
-
         self.action = config.action
         self.error_flag = False
 
         self.config = config
+        self.now = datetime.now(self.config.tz)
 
         self.command_list = [
             "addline_/usr/local/bin/dag metrics | grep 'Rewards'",
@@ -47,7 +45,7 @@ class CheckDagStatus():
         self.last_price_usd = 0
         self.usd_dag_price = 0
 
-        self.today = datetime.now()
+        self.today = datetime.now(self.config.tz)
         self.date_only = self.today.strftime("%Y-%m-%d")
         self.simple_time = self.today.strftime("%H:%M")
         self.today = self.today.strftime("%Y-%m-%d %H:%M:%S")

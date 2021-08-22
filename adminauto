@@ -60,8 +60,8 @@ function disclaimer()
     printf "${bld}${red}** USE AT YOUR OWN RISK **${clr}\n\n"
     printf "I am not employeed by Constellation.io; however,\n"
     printf "I ${bld}${red}love${clr} the community and want to give back.\n\n"
-    printf "${cyn}THIS SCRIPT WILL ${red}NOT${cyn} RUN PROPERLY IN A ${start_under}DOCKER CONATAINER${end_under}\n"
-    printf "${clr}Install directory: ${bld}${yel}\$HOME/cn_automation${clr}\n\n"
+    printf "${wht}DESIGNED TO WORK ON UBUNTU ONLY (at the current moment).\n"
+    printf "${wht}Install directory: ${bld}${yel}\$HOME/cn_automation${clr}\n\n"
 }
 
 
@@ -196,15 +196,96 @@ function prepare_new_installation()
 }
 
 
+function special_case_beta_upgrade()
+{
+    if [[ ! -d $HOME/cn_automation ]]; then
+        printf "${yel}Checking for previous BETA releases..."
+        beta_version_count=$(ls -l $HOME/ | grep "node-automation" | wc -l)
+        beta_version=$(ls -l $HOME/ | grep "node-automation" | awk '{print $9}')
+        if [[ $beta_version_count > 0 ]]; then
+            printf "\r${yel}Checking for previous BETA releases... ${grn}found beta${crl}\n\n"
+            printf "${bld}${red}SPECIAL CASE${clr}\n"
+            printf "${mag}${bld}${start_under}If you${end_under}${clr}${cyn} fall into the category of early adopters, and you did ${start_under}not${end_under} follow\n"
+            printf "the directions from the ${wht}INSTALL.md${cyn} file originally...\n"
+            printf "It is strongly suggested that you ${red}manually${cyn} backup your ${wht}config.yaml${cyn}\n"
+            printf "and your ${wht}log files${cyn} before continuings.  Also you may want to\n"
+            printf "clean up the old installation before continuing...\n\n${clr}"
+
+            printf "${cyn}After installation completes successfully, it is \n"
+            printf "will move the older version(s) to ${wht}/var/tmp${cyn}.\n\n"
+            printf "${grn}This is done to avoid delete operations against the node\n"
+            printf "in sensitive directories... You can go back and clean up the\n"
+            printf "older versions later from ${wht}/var/tmp${grn} at your convenience.\n${clr}"        
+            
+            if [[ $beta_version_count > 1 ]]; then
+                printf "\n${red}Found multiple beta versions on this system.\n"
+                printf "This install will work with the ${wht}${start_under}latest${clr}${cyn} version.\n"
+                readarray -t multi_beta_version < <(ls -l $HOME/ | grep "node-automation" | awk '{print $9}')
+                printf "Version: ${b_wht}${bld}${blk} ${multi_beta_version[-1]} \n\n${clr}"
+                beta_version=${multi_beta_version[-1]}
+            elif [[ $beta_version_count > 0 ]]; then
+                printf "\n${yel}Found a previous version: ${b_wht}${bld}${blk} $beta_version \n\n${clr}"
+            fi
+
+            printf "${red}If this version is not correct, quit the install and manually\n"
+            printf "backup configs and logs, and then remove the other versions first.\n\n${clr}"
+
+            question="Do you want to use the version listed above to upgrade from?"
+            test_yes_no continue_only y
+            if [[ ${userdata[continue_only]} = true ]]; then
+                printf "${yel}Backing up configs and logs..."
+                mkdir $HOME/cn_automation
+                mkdir $HOME/cn_automation/configs
+                mkdir $HOME/cn_automation/logs
+                cp $HOME/$beta_version/configs/config.yaml $HOME/cn_automation/configs/
+                cp $HOME/$beta_version/logs/* $HOME/cn_automation/logs/    
+                printf "\r${yel}Backing up configs and logs... ${grn}Done!${clr}\n"
+
+                if [[ $beta_version_count > 1 ]]; then
+                    for i in "${!multi_beta_version[@]}"
+                    do
+                        printf "${yel}moving ${multi_beta_version[$i]} to /var/tmp (you can delete later)..."
+                        rm -rf /var/tmp/${multi_beta_version[$i]}
+                        mv -f $HOME/${multi_beta_version[$i]} /var/tmp/
+                        printf "\rmoving ${multi_beta_version[$i]} to /var/tmp (you can delete later)... ${grn}done!${clr}\n"
+                    done      
+                elif [[ $beta_version_count > 0 ]]; then
+                        printf "${yel}moving $beta_version to /var/tmp (you can delete later)..."
+                        rm -rf /var/tmp/$beta_version
+                        mv -f $HOME/$beta_version /var/tmp/
+                        printf "\rmoving $beta_version to /var/tmp (you can delete later)... ${grn}done!${clr}\n"
+                fi
+            else
+                printf "\n${cyn}You have elected ${red}NOT${cyn} to upgrade from a Beta version found\n"        
+                printf "Any logs or configs will not be backed or used to help you with the new install\n"        
+                printf "Installation will be a fresh install!\n\n" 
+                printf "To ${red}AVOID${cyn} this message in the future, clean up the beta version from your system\n"
+                printf "${red}skipping beta special case...${clr}\n"       
+            fi
+        else
+            printf "\r${yel}Checking for previous BETA releases... ${grn}No beta found${crl}\n"
+            printf "${yel}If you believe their is a beta release on this system, please backup\n"
+            printf "your configs and logs manually before continuing...\n"
+        fi
+    #else
+        # printf "${cyn}There is a ${wht}non-beta${cyn} version of this program found\n"
+        # printf "We will not be using any ${wht}beta versions${cyn} to continue.\n"  
+        # printf "If you have logs and configs, they will not be used or saved\n"
+        # printf ", and the beta installation will not be removed.\n"
+    fi
+}
+
+
 function perform_installation()
 {
             print_banner 1
-            printf "==> Cleaning up previous version\n"
-            rm -rf $HOME/cn_automation/
+            printf "${yel}==> Cleaning up previous version (moving to /var/tmp/)\n"
+            rm -rf /var/tmp/cn_automation${AUTOMATION_VERSION}
+            mv -f $HOME/cn_automation/ /var/tmp/cn_automation${AUTOMATION_VERSION}
             printf "${bld}${yel}Starting Installation...\n${clr}"
             printf "${yel}==> Downloading new source code... (${cyn}Please Wait${yel}) "
             wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}b.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}b.tar.gz >/dev/nul 2>&1
-            printf "\r==> Downloading new source code... Done!                  \n"
+            printf "\r==> Downloading new source code... ${grn}Done!${yel}                  \n"
             printf "==> Installing... (${red}Please Wait"
             tar xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
             printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
@@ -212,13 +293,12 @@ function perform_installation()
             printf "==> Cleaning up..."
             rm /var/tmp/v${AUTOMATION_VERSION}b.tar.gz
             mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}b/ $HOME/cn_automation
-            # rmdir $HOME/automation/constellation-node-automation-${AUTOMATION_VERSION}b
             printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
 
             if [[ $install_type = new ]]; then
                 printf "==> Preparing the configuration file for review..."
                 cp /$HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
-                printf "\r==> Preparing the configuration file for review... ${grn}done${yel}\n"
+                printf "\r==> Preparing the configuration file for review... ${grn}Done!${yel}\n"
             fi
 
             warn_suggest=true
@@ -227,7 +307,8 @@ function perform_installation()
             fi
 
             if [[ $warn_suggest = true ]]; then
-                printf "\n${bld}${b_cyn}${wht}${start_under}HIGHLY SUGGESTED${end_under}${clr}${yel}\nPLEASE OPENING THE ${start_under}${bld}README.md${clr}${yel} file from the GitHub Repository.\n"
+                config_verify_skipped=false
+                printf "\n${bld}${b_wht}${blk}${start_under}HIGHLY SUGGESTED${end_under}${clr}${yel}\nPLEASE OPENING THE ${start_under}${bld}README.md${clr}${yel} file from the GitHub Repository.\n"
                 printf "Clicking on the ${grn}configuration${yel} section.\nThis will be ${bld}${grn}VERY${clr}${yel} important to make sure you understand\n"
                 printf "the configuration questions about to be asked!\n\n"
                 printf "${clr}"
@@ -240,6 +321,9 @@ function perform_installation()
                 fi
                 perform_configuration
                 build_yaml
+            else
+                config_verify_skipped=true
+                clean_up_and_complete
             fi
 
 }
@@ -314,6 +398,8 @@ function perform_configuration()
 
     printf "${yel}==> Starting Configuration...\n"
     printf "${clr}You can just hit <enter> if value is correct.\n"
+    printf "${grn}${bld}New or changed configuration settings may appear\n"
+    printf "as blank entires.  Refer to the README for hints\n${clr}"
     printf "${bld}${blu}===> EMAIL SECTION${clr}\n"
     progress_done
 
@@ -331,14 +417,14 @@ function perform_configuration()
     value1=$(grep gmail_acct /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     printf "\n${yel}Enter in the gmail account you setup in order to send MMS/Emails through\n"
     printf "See the INSTALL.md Setup Gmail section for details\n"
-    read -e -p "Gmail account email address? [${cyn} ${value1} ${yel}]: " value2
+    read -e -p "Gmail account email address? [${cyn} $value1 ${yel}]: " value2
     assign_userdata gmail_acct
 
     # gmail token
     value1=$(grep gmail_token /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     printf "\n${yel}Enter your gmail account token needed for the automation program\n"
     printf "See the INSTALL.md Setup Gmail section for details\n"
-    read -e -p "Gmail account email access token? [${cyn} ${value1} ${yel}]:${clr} " value2
+    read -e -p "Gmail account email access token? [${cyn} $value1 ${yel}]:${clr} " value2
     assign_userdata gmail_token
 
     # email address receipients
@@ -351,7 +437,7 @@ function perform_configuration()
         printf "${yel}Please enter the email recipients in the following format:\n"
         printf "${bld}${mag}email@first.com,email2@second.com${clr}${yel}\n"
         printf "no spaces, separated by commas if more than one email\n"
-        printf "[ ${cyn}${value1}${clr} ]:\n"
+        printf "[${cyn} $value1 ${yel}]:${clr}\n"
         read -e -p "> " value2
         assign_userdata email_recipients
     else
@@ -374,7 +460,7 @@ function perform_configuration()
         printf "in the following format:\n"
         printf "${bld}${mag}number1@mms.gateway.com,number2@mms.gateway.com${clr}${yel}\n"
         printf "no spaces, separated by commas if more than one email\n"
-        printf "[ ${cyn}${value1}${yel} ]:${clr}\n" value2
+        printf "[${cyn} $value1 ${yel}]:${clr}\n" value2
         read -e -p "> " value2
         assign_userdata "mms_recipients"
     else
@@ -400,17 +486,32 @@ function perform_configuration()
 
     # node timezone    
     printf "${bld}${mag}What timezone are you currently located. Your server should be\n"
-    printf "${bld}${mag}set to UTC (recommended) however, if you want your automation\n"
+    printf "${bld}${mag}set to ${wht}UTC${mag} (recommended) however, if you want your automation\n"
     printf "${bld}${mag}program to run only at certain local times, and you want your logs\n"
     printf "${bld}${mag}to match your local time, you can set the timezone here.${clr}\n"
-    printf "${cyn}This will not change your server's (node's) time, only the programs reporting.${clr}\n"
-    printf "${yel}List of valid timezones:\n${wht}https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568 \n\n"
+    printf "${cyn}This will not change your server's (node's) time, only the programs reporting.\n"
+    printf "${red}Note:${cyn}Time zones like ${wht}EST${cyn} may not follow daylight savings.${clr}\n\n"
 
     question="Do you want a list of available time zones? "
     test_yes_no continue_only n
     if [[ ${userdata[continue_only]} = true ]]; then
-        timezones=$(timedatectl list-timezones)
-        printf "$timezones\n"
+        done_searching=false
+        while [ $done_searching = false ]; do
+            printf "${cyn}Single word search only. ${mag}EG) ${wht}Los_Angeles\n"
+            read -e -p "${yel}Enter search term to filter or <enter> for full list: ${clr}" tz_search
+            if [[ -z $tz_search ]]; then
+                search_action="-a"
+            else
+                search_action="-s $tz_search"
+            fi
+            timezones=$(python3 $HOME/cn_automation/functions/search_timezones.py $search_action)
+            printf "$timezones\n"
+            question="Perform another search again? "
+            test_yes_no continue_only n
+            if [[ ${userdata[continue_only]} = false ]]; then
+                done_searching=true
+            fi
+        done
     fi
 
     echo
@@ -531,6 +632,7 @@ function perform_configuration()
         printf "the initial down message followed by an up message when the system recovers\n"
         printf "or do you want to receive an alert every ${start_under}$value${end_under} minutes until it comes back up?${clr}\n"
         question="Do you want only an initial down followed by up?"
+        value1=$value1f
         test_yes_no alarm_once
     else
         userdata[lb]=$value1a
@@ -579,7 +681,7 @@ function perform_configuration()
 
     # enable colateral
     value1=$(sed '/collateral/,/constraints/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
-    question="Do you want to enable colllateral?"
+    question="Do you want to enable collateral?"
     test_yes_no col_enabled
 
     value1a=$(grep node_count /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
@@ -773,8 +875,13 @@ function clean_up_and_complete()
             printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild\nconfiguration if necessary.\n" 
         fi
     else
-        printf "${bld}${grn}==> Placing new configuration in place...\n${clr}"
-        cp /var/tmp/new_config.yaml $HOME/cn_automation/configs/config.yaml
+        if [[ config_verify_skipped = false ]]; then
+            printf "${bld}${grn}==> Placing new configuration in place...\n${clr}"
+            cp /var/tmp/new_config.yaml $HOME/cn_automation/configs/config.yaml
+        else
+            printf "${yel}Sending original unchanged config to new upgrade...\n${clr}"
+            cp /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml $HOME/cn_automation/configs/config.yaml
+        fi
     fi
 
     if [[ $install_type = existing ]]; then
@@ -789,8 +896,13 @@ function clean_up_and_complete()
         rm -rf /var/tmp/automation_node_logs/
     fi
     printf "${grn}==> Cleaning temporary config files...\n"
-    rm /var/tmp/config.automation.tmp
-    rm /var/tmp/new_config.yaml
+    if [[ -f /var/tmp/config.automation.tmp ]]; then
+        rm -f /var/tmp/config.automation.tmp
+    fi
+    if [[ -f /var/tmp/new_config.yaml ]]; then
+        rm -f /var/tmp/new_config.yaml
+    fi
+    
     
     echo
     read -e -p "${yel}We are ${bld}${grn}Ready${clr}${yel}... press <enter> to continue: " enterkey
@@ -823,8 +935,10 @@ function clean_up_and_complete()
     else
         printf "${yel}Program not started, please run ${wht}'adminauto -s'${yel}\n"
         printf "to start or restart the script.\n"
-        printf "If an old version of the script was running, it is still running${clr}\n"
+        printf "If an old version of the script was running, it is still running...${clr}\n\n"
     fi
+
+    read -e -p "${bld}${mag}Press <enter> to exit the installation program: " enterkey
 
 }
 
@@ -1070,6 +1184,8 @@ if [[ ${userdata[continue_only]} == true ]]; then
             ;;
 
         install) 
+            special_case_beta_upgrade # check if user is attempting to upgrade from beta version
+                                      # this would mean that they manually installed the program
             check_version_for_upgrade
             if [[ skip_version_continue = false ]]; then
                 question="Continue?"

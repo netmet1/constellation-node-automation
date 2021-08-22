@@ -35,7 +35,7 @@ class Core():
 
         if self.config.create_report is True:
             if self.config.report_enabled is True:
-                createReport = CreateReport("daily", buildReport.usd_dag_price, self.config)
+                createReport = CreateReport("daily", buildReport, self.config)
                 self.msg = createReport.report_str 
             else:
                 self.msg_action= "silent"
@@ -103,7 +103,7 @@ class Core():
                         for n in range(0,60,start_interval):
                             if now.minute == n:
                                 # set time first to avoid synchronous distortion
-                                self.config.last_run = datetime.now()
+                                self.config.last_run = datetime.now(self.config.tz)
                                 self.node_checkup()
                                 break
 
@@ -126,12 +126,12 @@ class Core():
 
                     if (now >= self.config.start_time and now <= self.config.report_time) and last_run < self.config.report_time: 
                         if now == self.config.report_time:
-                            self.config.last_run = datetime.now()
+                            self.config.last_run = datetime.now(self.config.tz)
                             self.config.create_report = True
                             self.config.silence_writelog = True
                             self.node_checkup()
                         elif now >= next_run:
-                            self.config.last_run = datetime.now()
+                            self.config.last_run = datetime.now(self.config.tz)
                             self.config.create_report = False
                             self.config.silence_writelog = False
 
