@@ -59,8 +59,9 @@ function disclaimer()
     printf "to help and do absolutely ${bld}${grn}${start_under}NO${clr} harm.\n\n"
     printf "${bld}${red}** USE AT YOUR OWN RISK **${clr}\n\n"
     printf "I am not employeed by Constellation.io; however,\n"
-    printf "I ${bld}${mag}love${clr} the community and want to give back.\n"
-    printf "Install directory: ${bld}${yel}\$HOME/cn_automation${clr}\n\n"
+    printf "I ${bld}${red}love${clr} the community and want to give back.\n\n"
+    printf "${cyn}THIS SCRIPT WILL ${red}NOT${cyn} RUN PROPERLY IN A ${start_under}DOCKER CONATAINER${end_under}\n"
+    printf "${clr}Install directory: ${bld}${yel}\$HOME/cn_automation${clr}\n\n"
 }
 
 
@@ -155,13 +156,14 @@ function prepare_new_installation()
     fi
 
     printf "${yel}==> Checking for Python3 Package Manager...${clr}"
+    cd $HOME
     test=$(pip3 --version 2>/dev/null | wc -l)
     if [[ $test = 0 ]]; then
         printf "\nDid not find the package manager on your system...\n"
         printf "Installing Python Package Manager this can take\n"
         printf "${red}more than${clr} a little time be patient... (${cyn}please wait${clr})"
         apt-get -y install python3-pip >/dev/null 2>&1
-        printf "\r${red}more than${clr} a little time be patient... ${grn}success${yel}     \n\m"
+        printf "\r${red}more than${clr} a little time be patient... ${grn}success${yel}     \n\n"
     else 
         printf "${yel}\r==> Checking for Python3 Package Manager... ${grn}success${yel}\n"
     fi
@@ -204,20 +206,20 @@ function perform_installation()
             wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}b.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}b.tar.gz >/dev/nul 2>&1
             printf "\r==> Downloading new source code... Done!                  \n"
             printf "==> Installing... (${red}Please Wait"
-            tar -xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
+            tar xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
             printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
-
-            if [[ $install_type = new ]]; then
-                printf "==> Preparing the configuration file for review..."
-                cp $HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
-                printf "\r==> Preparing the configuration file for review... ${grn}done${yel}\n"
-            fi
 
             printf "==> Cleaning up..."
             rm /var/tmp/v${AUTOMATION_VERSION}b.tar.gz
             mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}b/ $HOME/cn_automation
             # rmdir $HOME/automation/constellation-node-automation-${AUTOMATION_VERSION}b
             printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
+
+            if [[ $install_type = new ]]; then
+                printf "==> Preparing the configuration file for review..."
+                cp /$HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
+                printf "\r==> Preparing the configuration file for review... ${grn}done${yel}\n"
+            fi
 
             warn_suggest=true
             if [[ $install_type = "existing" ]]; then
@@ -329,14 +331,14 @@ function perform_configuration()
     value1=$(grep gmail_acct /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     printf "\n${yel}Enter in the gmail account you setup in order to send MMS/Emails through\n"
     printf "See the INSTALL.md Setup Gmail section for details\n"
-    read -e -p "Gmail account email address? [${cyn} ${value1} ${clr}]: " value2
+    read -e -p "Gmail account email address? [${cyn} ${value1} ${yel}]: " value2
     assign_userdata gmail_acct
 
     # gmail token
     value1=$(grep gmail_token /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     printf "\n${yel}Enter your gmail account token needed for the automation program\n"
     printf "See the INSTALL.md Setup Gmail section for details\n"
-    read -e -p "Gmail account email access token? [${cyn} ${value1} ${yel}${clr}]: " value2
+    read -e -p "Gmail account email access token? [${cyn} ${value1} ${yel}]:${clr} " value2
     assign_userdata gmail_token
 
     # email address receipients
@@ -397,13 +399,22 @@ function perform_configuration()
     progress_done
 
     # node timezone    
-    value1=$(grep time_zone /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     printf "${bld}${mag}What timezone are you currently located. Your server should be\n"
     printf "${bld}${mag}set to UTC (recommended) however, if you want your automation\n"
     printf "${bld}${mag}program to run only at certain local times, and you want your logs\n"
     printf "${bld}${mag}to match your local time, you can set the timezone here.${clr}\n"
     printf "${cyn}This will not change your server's (node's) time, only the programs reporting.${clr}\n"
-    printf "${yel}List of valid timezones:\n${wht}https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568\n"
+    printf "${yel}List of valid timezones:\n${wht}https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568 \n\n"
+
+    question="Do you want a list of available time zones? "
+    test_yes_no continue_only n
+    if [[ ${userdata[continue_only]} = true ]]; then
+        timezones=$(timedatectl list-timezones)
+        printf "$timezones\n"
+    fi
+
+    echo
+    value1=$(grep time_zone /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     read -e -p "${yel}Enter the time zone for your automation program [${cyn} $value1 ${yel}]: ${clr}" value2
     assign_userdata time_zone
 
@@ -420,6 +431,7 @@ function perform_configuration()
         # interval minutes
         echo
         read -e -p "${yel}How often do you want to receive alerts in minutes? [${cyn} $value1a ${yel}]: ${clr}" value2
+        value1=$value1a
         assign_userdata int_minutes
 
         # start and stop alerts for the day
@@ -430,10 +442,12 @@ function perform_configuration()
         else
             printf "${bld}${mag}Include the single quotes\n"
             read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to start? [${cyn} $value1b ${yel}]: ${clr}" value2
+            value1=$value1b
             assign_userdata start_time
             
             printf "${bld}${mag}Include the single quotes\n"
             read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to stop? [${cyn} $value1c ${yel}]: ${clr}" value2
+            value1=$value1c
             assign_userdata end_time
         fi
     else
@@ -662,7 +676,7 @@ function build_yaml()
 
     build_yaml_file_items 0 configuration header
     
-    build_yaml_file_items 2 notification header
+    build_yaml_file_items 2 notifications header
     build_yaml_file_items 4 node_name item
     build_yaml_file_items 4 node_username item
     build_yaml_file_items 4 gmail_acct item
@@ -841,33 +855,33 @@ function configure_cron_tab()
                 1)
                     # Existing Entry Found
                     if [[ $install_type = new ]]; then
-                        printf "${yel}This seems like a new installation; however, we found an\n"
+                        printf "${bld}${mag}This seems like a new installation; however, we found an\n"
                         printf "existing cron entry with a program of the same name as ours\n"
                         printf "If this is because of some reasons because the program was\n"
                         printf "uninstalled and reinstalled, you can safely ignore.  Otherwise,\n"
                         printf "continue with caution.${clr}\n"
                     elif [[ $install_type = existing ]]; then
-                        printf "${yel}We found an existing entry already.  We are going to replace it\n"
+                        printf "${bld}${mag}We found an existing entry already.  We are going to replace it\n"
                         printf "this should not be a problem because this is an upgrade${clr}\n"
                     fi
                     ;;                        
                 *)
                     # More than one entry found
-                    printf "${yel}Something was inconsistent in the crontab.\n"
+                    printf "${bld}${mag}Something was inconsistent in the crontab.\n"
                     printf "Multiple lines have been found for the automation program.\n"
                     printf "This could indicate that you have configured this in the past\n"
                     printf "or you have another program with the same name.\n"
                     printf "If you are the only one that runs this node, you can safely\n"
                     printf "fix this yourself.  However, if you are not technically saavy, please\n"
                     printf "work with someone that can help you and skip this part.\n"
-                    printf "${red}${bld}WARNING:${clr}${yel} If you continue the cron install, all other lines\n"
+                    printf "${red}WARNING:${mag} If you continue the cron install, all other lines\n"
                     printf "will be removed, and only the single entry for this program will remain.\n"
-                    printf "Issue a ${clr}'crontab -l'${yel} at the command prompt to review what is\n"
-                    printf "present, then re-run this setup script.\n"
+                    printf "Issue a ${clr}'crontab -l'${bld}${mag} at the command prompt to review what is\n"
+                    printf "present, then re-run this setup script.${clr}\n"
                     ;;
         esac
         if [[ $existing_cron_lines != 0 ]]; then
-            question="\nDo you want to add the cron job anyway?"
+            question="Do you want to add the cron job anyway?"
             test_yes_no continue_only n
             if [[ ${userdata[continue_only]} = true ]]; then
                 continue=yes
@@ -876,9 +890,9 @@ function configure_cron_tab()
         if [[ $continue = "yes" ]]; then
             # @reboot /usr/bin/python3 /root/cn_automation/automation.py auto >> ~/cron.log 2>&1
             if [[ ! -z $existing_cron_str ]]; then
-                crontab -u ${userdata[username]} -l | grep -v $existing_cron_str | crontab -u root -
+                crontab -u ${userdata[node_username]} -l | grep -v $existing_cron_str | crontab -u root -
             fi
-            (crontab -u ${userdata[username]} -l ; echo "@reboot /usr/bin/python3 /root/cn_automation/automation.py auto >> ~/cron.log 2>&1") | crontab -u ${userdata[username]} -
+            (crontab -u ${userdata[node_username]} -l ; echo "@reboot /usr/bin/python3 /root/cn_automation/automation.py auto >> ~/cron.log 2>&1") | crontab -u ${userdata[node_username]} -
         fi
 
         printf "${bld}${grn}Cron configuration section completed\n${clr}${yel}"
@@ -908,7 +922,7 @@ function check_version_for_upgrade()
     printf "\n${yel}Checking automation script and program versioning... (${red}please wait${yel}) "
     prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/v1.3_feature_install_package/adminauto | grep "AUTOMATION_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
     printf "\r${yel}Checking automation program and autoadmin script versioning... ${grn}complete!                   "
-    printf "\nLatest Version: ${blu}${bld}$prod_version${clr}  ${grn}Current Version: ${blu}${bld}$AUTOMATION_VERSION${clr}\n\n"
+    printf "\nLatest Version: ${cyn}${bld}$prod_version${clr}  ${grn}Current Version: ${cyn}${bld}$AUTOMATION_VERSION${clr}\n\n"
     skip_version_continue=false
 
     if [[ $prod_version > $AUTOMATION_VERSION ]]; then

@@ -330,6 +330,7 @@ class CheckDagStatus():
         if self.config.collateral_enabled:
             collateral = self.config.collateral_nodes*self.current_constellation_collateral
             collateral += int(self.current_dag_count)
+            collateral += int(self.config.free_dag)
 
             possible_nodes = collateral/self.current_constellation_collateral
             this_possible_nodes = math.floor((self.current_constellation_collateral+int(self.current_dag_count))/self.current_constellation_collateral)
