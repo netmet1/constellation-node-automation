@@ -1,4 +1,4 @@
-# CONSTELLATION
+# CONSTELLATION NODE AUTOMATION
 
 ## Node Operator Datapreneuer Alerting Automation Program
 
@@ -23,12 +23,10 @@
     1. [Parameter Description Table](#parms)
 1. [Understanding the Log File](#logs)
 1. [Sending Log Reports for Taxes or Documentation](#logs_report)
-1. [Installation](INSTALL.md)
-    1. [Setup Gmail](INSTALL.md#gmail)
-    1. [Node Installation](INSTALL.md#nodeinstall)
-    1. [Prerequisites](INSTALL.md#prereq)
-        1. [Node TimeZone Setup](/INSTALL.md#clocksetup)
+1. [Installation](docs/INSTALL.md)
+    1. [Install note](#install)
 1. [Common Commands and Troubleshooting](TS_USAGE.md)
+1. [File Structure](#file_structure)
 
 ---
 
@@ -36,35 +34,46 @@
 
 A Python automation and status program to run on your node.  It will send you alerts so you can keep up to date on the progress of your node, DAGs, rewards, and basic **system engineering** statistics, to help keep you in the know.
 
-**IT TAKES NO RESPONSIBILITY FOR RESULTS, OUTCOMES, AND ANYTHING ELSE THAT MIGHT CAUSE ISSUES.  USE AT YOUR OWN RISK**
+**IT TAKES NO RESPONSIBILITY FOR RESULTS, OUTCOMES, AND ANYTHING ELSE THAT MIGHT CAUSE ISSUES.** 
+
+**USE AT YOUR OWN RISK**
 
 #### This is a dynamic program that runs directly on your node to update you with your node's progress via:
     1. Text Message (mms or sms)
     2. Email
-    3. Other
+    3. Directly from your Node's console
     
 #### This program will monitor your node's state and how it is running.  
 
-> The following code is free to use as you would like, and you are welcome to contribute to it to make it better and more feature rich, as necessary.
+> The following code is free to use as you would like, and you are welcome to contribute to it to make it better and more feature rich, as necessary. **If you like this script, please let me know via twitter, github, or through the community channels. (CryptoNole)**
 
 ---
 
-##### Version: v1.3b
+##### Version: v2.0
 
 ---
 ### CHANGES <a name="changes"></a>
 
-- Added version information to the `--help, -h` option.
-- Some code refactoring
+- **REMOVED BETA CLASSIFICATION**.  The `automation` program has been vetted over time and it is felt that it is ready to continue its lifecycle as a regular release.
+- `adminauto` script has been added to simplify the install, upgrade, start, and stop procedures previously done manually and requiring more interaction form an advanced point of view.  Also offers alternative to execute alerts, reports, and health checks.
+- Separated out emails from MMS in order to fix some buggy results in the MMS egress messaging.
+- Code refactoring.
+- Enable/Disable Intervals to allow health checks only.
+- Various Bug fixes.
+- Updated the `End of Day` report output to include collateral section.
 
 
 ---
 ### FEATURES <a name="features"></a>
 
-- Log Error Rate Alerting
+- Email alerts
+- SMS/MMS alerts
 - Node Reward Accumulation
     - Possible reset detection
 - Node Reward/Collateral Accumulation
+- Health Checks
+    - Load Balancer
+    - Load Balancer's view or your Endpoint
 - $DAG to USD
 - Current $DAG price v. USD
 - Node Status
@@ -73,10 +82,8 @@ A Python automation and status program to run on your node.  It will send you al
 - Data Usage
 - Memory and Swap Warning
 - Uptime Warning
-- Load Warning
-- Health Checks
-    - Load Balancer
-    - Load Balancer's view or your Endpoint
+- CPU Load Warning
+- Log Error Rate Alerting
 - Security Checks
     - Unauthorized login attempts
     - Login attempt port ranges
@@ -93,11 +100,17 @@ A Python automation and status program to run on your node.  It will send you al
 
 ## USAGE <a name="usage"></a>
 
+# AS OF VERSION 2.0 - MOST USAGE FUNCTIONS BELOW CAN BE INITIATED FROM THE [`ADMINAUTO`](#adminauto) SCRIPT.
+
+> It is still recommended to review the usage section to understand what the commands will accomplish and how to do this manually through the actual python program.
+
 | command | Parameters | Optional |
 | ------- | :-------: | :------- | 
-| python3 automation.py | `alert` `report` `auto` `health` `silent` | -p, & |
+| `python3 automation.py` | `alert` `report` `auto` `health` `silent` | `-p`, `&` |
 
 > `&` will run the system in the background until `ctl-c` performed.
+
+> For use of the `auto` feature, there is an `adminauto` script that can be utilized for ease of use.  Please see the [adminauto](#adminauto) section for details.
 
 | CLI Parameter | Description |
 | :-------------: | :--------- | 
@@ -106,6 +119,8 @@ A Python automation and status program to run on your node.  It will send you al
 | **report** | This will run the system and send the `end of the day` report once.  This allows you to run a one-time instance of the program, at the time of your choice. *Note: This may produce unexpected statistical results, if not run at the end of the day.* |
 | **silent** | This will run the program and update log files, but will **not** alert to the user via MMS, SMS or email. |
 | **health** | This will perform a health check against the load balancer (LB) configured in the `config.yaml` file and your node's connection to the LB. Add the `-p` option to print to the console (CLI) instead of email. |
+
+> If you disable subject headers by changing `add_subject` in the configuration to `disabled`, you will not receive MMS/SMS messages with subject lines (does not affect emails).
 
 #### Help Usage
 
@@ -122,11 +137,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -p, --print           print to the console instead of mms/sms, does not work
+  -p, --print           print to the console instead of mms/sms/email, does not work
                         with 'auto'.
   -c EMAIL, --csv EMAIL
                         For use with the 'log' action only. Program will send
-                        a csv formated file with search results to the
+                        a csv formatted file with search results to the
                         specified email.
   -ss START_DATE, --search_start START_DATE
                         For use with 'log' action. The start date search log
@@ -276,6 +291,11 @@ END OF DAY REPORT
 START: 2021-06-26 07:00:00
 END: 2021-06-26 15:30:00
 ---
+Collateral Nodes: 2.200000
+Collateral DAGs: 550,000
+Collateral USD$: $31,920.90
+Next Node: 200,000
+---
 REWARDS: 841
 AVE/15Min: 26
 AVE/30Min: 53
@@ -373,53 +393,96 @@ Endpoint <your_ip_here>: Error
 Codes: (200, 502)
 ```
 
-## ADMINAUTO.SH HELPER SCRIPT <a name="adminauto">
-The program now includes a script called `adminauto.sh` to help make it easier to `start`, `restart` and `stop` the program from running quickly and easily.
+## ADMINAUTO HELPER SCRIPT <a name="adminauto">
+
+This script serves to help `install` and `upgrade` your **automation** program.  It wil also
+help make it easier to `start`, `restart` and `stop` the program from running quickly and easily.
+
 **THIS IS ONLY FOR USAGE WITH THE `auto` option.**
 
 | command | Parameters | 
 | ------- | :-------: | 
-| . adminauto.sh | `-h` `-s` `-r` `-k` | 
-
-> The command should always start with the `.` in the front of the command
+| adminauto.sh | `-h` `-i` `-c` `-s` `-r` `-k` `-v` `-a` `-l` `-e` `-p` `-cr`| 
 
 ```
 Node Operator Automation Helper Script
---------------------------------------
-usage: . admin_auto.sh [-h] [-s] [-r] [-k]
+Version: 2.0
+
+usage: adminauto [-h] [-i] [-c] [-s] [-r] [-k] [-v] [-a] [-l] [-e] [-p] [-cr]
 
 THIS IS FOR USE WITH THE "AUTO" ARGUMENT (auto run)
 This does not deal with single alerts, reports, or logs
 
-This does not deal with the program running locally in the current user session
-without the "nohup" command.  See README.md
+This does not deal with the program running locally in the current user sessionwithout the "nohup" command.  See README.md
 
-positional arguments:
-  -h        show this help message
-  -s        start the automation program if not running
-            this will start the program in the background
-  -r        stop the program, then restart it
-  -k        stop the program from running in the background
+Positional arguments:
+ -h        show this help message
+
+ -v        show program's current version
+
+ -i        first time installation or upgrade existing version
+           (script will auto-detect).
+ -cr       setup cron only.
+ -c        guided help to update the configuration only.
+
+ -a        send alert to mms/sms/email (unless -p is used)        
+ -l        send health check to mms/sms/email (unless -p is used)        
+ -e        send end of day report to mms/sms/email (unless -p is used)        
+
+ -p        print to console and override alert, report, or health check from
+           being sent to sms/mms/email.
+
+ ===========================
+
+ -s        start the automation program if not running
+           this will start the program in the background
+           WARNING: beware of starting multiple instances of the program
+           this can cause you to get duplicate alerts at the same moment
+           in time.
+ -r        stop the program, then restart it
+ -k        stop the program from running in the background
             this will find and kill the automation program process
 
 example usage:
-~# . admin_auto.sh -s
+~# adminauto -s
 This command will start the node operator automation program in the background with the "auto" variable.
 
-~#: . admin_auto.sh -r
+~#: adminauto -r
 This command will find the process that is running and "kill" it (stop it).
 then it will restart it with the auto command in the background (-s).
+
+~#: adminauto -a
+This command will send out an alert.
+
+~#: adminauto -a -p
+This command will print out an alert to the console.
+
+DAG, $DAG it! You node if you node.
 ```
+
+---
+
+## INSTALLATION <a name="install"></a>
+
+Please refer to the [INSTALL.md](docs/INSTALL.md) document (readme) to install this program.  
 
 ---
 
 ## CONFIGURATION <a name="config"></a>
 
-Rename `config.example.yaml` to `config.yaml`. Navigate to your `config.yaml` file and open with your favorite editor.  
-You **MUST** update this file in order for the program to function properly.
+**This section will help you understand the questions that will be asked of you while you attempt
+to install the `automation` program via the `adminauto` script and via manual configuration of the `config.yaml` file.**
 
 >This is the **ONLY** file that you should be manipulating.  All other files in this program should be left alone.
 
+> Advanced users should be able to safely update this file as needed; however, it is recommended for those users that are not advanced, to use the `adminauto` script with the `-c` setting.
+
+```
+nodeuser@constellation-node:~# adminauto -c 
+```
+> The `adminauto` program (`adminauto -c`, `adminauto -i`) will run through all the necessary features and create the file (seen below) for you.
+
+Example Configuration file
 ```
 configuration:
   email:
@@ -450,6 +513,7 @@ configuration:
     node_port: 9001
     int_minutes: 5
   intervals:
+    enabled: true
     start_time: '07:00'
     end_time: '20:00'
     int_minutes: 15
@@ -470,22 +534,22 @@ configuration:
       - 5
       - 10
       - 50
-      - 100
-      - 34000
 ```
 
 The following pieces of the `config.yaml` must be changed to match your **specific** configuration.
-- node_username
-- gmail_acct
-- gmail_token
-- mms_recipients
-- email_recipients
+- **node_username**
+- **gmail_acct**
+- **gmail_token**
+- **mms_recipients**
+    - When configuring with the `adminauto` script, if you purposely enter in blank entries (when the default values are also blank), a `null_entry` will be auto-populated and the feature will disable automatically.
+- **email_recipients**
+    - When configuring with the `adminauto` script, if you purposely enter in blank entries (when the default values are also blank), a `null_entry` will be auto-populated and the feature will disable automatically.
     - *If you are planning on using the same email address to accept the incoming push requests from your node and also as your recipient email, you **must** put it in the recipients list here as well; otherwise the program will exit with a failure.*
     - **aka**: `bob@bob.com` sends alerts to `bob@bob.com`.
-- node_name
-- lb
+- **node_name**
+- **lb**
     - *If you don't know the LB fully qualified domain name (FQDN), you may need to ask in the community for this FQDN.  It isn't listed here for privacy reasons.*
-- node_ip
+- **node_ip**
 
 The following elements you might want to change from `false` to `true`
 - under the `healthcheck:` section `enabled: true`
@@ -522,14 +586,15 @@ The following elements you might want to change from `false` to `true`
 |  | `uptime_threshold` | | Number of days of uptime the server/node/instance has been running.  *Recommendation is to reboot after monthly patches* | int | `30` | no
 |  | `load_threshold` |  | Percentage of CPU load you want to warn against when threshold is exceeded. *float represented as a percentage* | float | `.7` | no
 | **healthcheck** |  | | Features that help setup the health check against the Load Balancer (LB) and End Node (Your Node) |
-|  | `enabled` |  | Enable this feature. | boolean | `false` | yes
+|  | `enabled` |  | Enable this feature. | boolean | `true` | yes
 |  | `lb` | | The fully qualified domain name of the constellation LB. | string |  | yes
 |  | `lb_port` | | Which TCP port is your health check using to do a GET for a response code? | int | `9000` | yes
 |  | `node_ip` | | The external IP address of your node | string | `X.X.X.X` | yes
 |  | `node_port` | | Which TCP port is your health check using to do a GET for a response code from the LB for your IP? | int | `9001` | yes| 
 |  | `int_minutes` | | How often do you want to do a health check against the LB?  **no less than 5 or greater than 60**. Must be increments of 5. | int | `30` | no | 
 |  | `alarm_once` | |If your End Point or the LB has an issue, only alarm once.  You will get alerted again, when the LB or EndPoint node is reachable again. If `false` as long as the LB or End Point is down, you will receive an alert every X minutes, based on the `int_minutes` setting. Because this is a critical function, it does not adhere to the `start_time` and `end_time` that might be setup for the normal `alert` feature. | boolean | `true` | yes | 
-| **intervals** |  | | Setup when you want the alerts to start/stop being pushed to your `mms_recipients`. |
+| **intervals** |  | | Setup when you want the alerts to start/stop being pushed to your `mms_recipients` and/or `email_recipients`. |
+|  | `enabled` | | If you only want health check alerts to be sent out, you can disable the intervals section. *If you don't enable at least health checks, this program will not do anything but take up resources.* | boolean | `true` | yes | 
 |  | `start_time` | | 24 hour clock notation - currently adheres to the systems local time zone.  When do you want the alerting to start each day? If you want the program to run 24/7, make your start time and end time '00:00'  **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'07:00'` | no
 |  | `end_time` | | 24 hour clock notation - local time zone.  When do you want the alerting to stop each day? **IMPORTANT**: The time needs to be surrounded by quotes. *Note: Stat calculations are rounded to the lowest hour.* | 'HH:MM' | `'20:00'` | no
 |  | `int_minutes` | | How often do you want text messages to be pushed out to your recipients? Must be in 5 minute increments (10,15,1440).  Can not be over 1440. If you need something more specific, utilize the CRON (see [Alternative Cron](INSTALL.md#alt_cron)). Please be aware that a shorter interval could cause your provider to block your source account.  *Recommendation*: no less than every 15 minutes, system restriction to 10 minutes. | MM | `30` | no
@@ -538,7 +603,7 @@ The following elements you might want to change from `false` to `true`
 |  | `split1` | | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
 |  | `split2` | | Float number less than 1. Split1 and Split2 must equal 1 in order for accurate calculations. | float | - | if enabled
 | **collateral** | | | This section is an optional configuration. When enabled, this feature will calculate your current collateral as it relates to the 250K USD requirement for obtaining a new node. |
-|  | `enabled` | | Enable this feature. | boolean | `false` | yes 
+|  | `enabled` | | Enable this feature. | boolean | `true` | yes 
 |  | `node_count` | | ***INCLUDING THIS NODE***. <a name="node_count"></a> How many nodes do you own that you want to include in the collateral calculations?  Note: Until the program couples with other node reward/income statistics, this will not include the reward/income from the other nodes, only the node's collateral itself. AKA: `enabled` with `node_count: 2` means you have 2 nodes all together including this node, that you want to count in your collateral calculations. | int | `1` | if enabled  
 | **reports** | | | This section is an optional configuration. When enabled, this feature will calculate your estimated earnings for the node, based on the prices allocated in the `estimates` list provided. |
 |  | `enabled` | | Enable this feature. | boolean | `false` |  yes
@@ -626,9 +691,47 @@ Print a report for a date range based on a start time and end time, send to CLI 
 ```
 python3 automation.py log -ss 2021-07-01 --se 2021-07-11 -p
 ```
+
+## File Structure <a name="file_structure">
+
+The following is a list of the package installation files
+
+```
+automation
+├── dag_count.log
+├── __init__.py
+├── adminauto
+├── automation.py
+├── classes
+│   │   ├── __init__.py
+│   │   ├── check_dag_status.py
+│   │   ├── config_obj.py
+│   │   ├── core.py
+│   │   ├── error_log_check.py
+│   │   ├── up_monitor.py
+│   │   ├── reports.py
+│   │   └── send_sms_email.py
+├── configs
+│   │   ├── config.example.yaml
+├── docs
+│   │   ├── INSTALL.md
+│   │   ├── MANUAL_INSTALL.md
+│   │   ├── TS_USAGE.md
+├── functions
+│   │   ├── search_timezones.py
+├── logs
+│   │   ├── __init__.py
+│   │   ├── dag_count.log
+├── templates
+│   │   ├── template.yaml
+```
 ---
 
+DAG $DAG it, If you node you node!
+
 [back to beginning of document](#top)
+
+!enod
 
 ---
 

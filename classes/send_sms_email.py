@@ -1,6 +1,7 @@
 import smtplib
 from email.message import EmailMessage, MIMEPart
 import time
+from typing import Tuple
 
 class SendAMessage():
 
@@ -22,8 +23,11 @@ class SendAMessage():
         else:
             if self.config.mms_enabled:
                 self.recipients = self.config.mms_recipients
+                if not self.config.mms_subject:
+                    self.build_subject = False
                 self.build_and_send_msg()
             if self.config.email_enabled:
+                self.build_subject = True
                 if self.config.mms_enabled:
                     time.sleep(5)
                 self.recipients = self.config.email_recipients
@@ -36,7 +40,7 @@ class SendAMessage():
         if self.config.csv:
             self.emailObj.add_attachment(self.content, maintype='application', subtype='pdf', filename=self.attach)
 
-        if self.config.mms_enabled and self.config.mms_subject:
+        if self.build_subject:
             self.emailObj['subject'] = self.subject
 
         self.emailObj['from'] = self.user

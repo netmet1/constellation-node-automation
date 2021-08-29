@@ -43,7 +43,6 @@ class Config():
 
 
     def setup_dates_times(self):
-        self.tz = pytz.timezone(self.config['intervals']['time_zone'])
         self.current_date = datetime.now(self.tz).strftime("%Y-%m-%d")
 
         try:
@@ -92,6 +91,7 @@ class Config():
     def setup_variables(self):
         self.action = self.dag_args.Action
         self.last_run = "never"
+        self.tz = pytz.timezone(self.config['intervals']['time_zone'])
         self.dag_log_file = self.path.replace("classes","logs/dag_count.log")
         self.dag_log_file_path = self.path.replace("classes","logs/")        
         self.mms_recipients = self.config['notifications']['mms_recipients']['list']
@@ -185,6 +185,10 @@ class Config():
 
 
     def config_default_check(self):
+
+        if self.tz == "null_entry":
+            self.tz = "UTC"
+
         try:
             int(self.error_max)
         except:
@@ -283,10 +287,14 @@ class Config():
         if not isinstance(self.mms_recipients,list): 
             print("no sms/mms recipients have been specified, or error in config.yaml.  Please see README.md")
             exit(1)
+        if "null_entry" in self.mms_recipients and self.mms_enabled:
+            self.mms_enabled = False
 
         if not isinstance(self.email_recipients,list): 
             print("no email recipients have been specified, or error in config.yaml.  Please see README.md")
             exit(1)
+        if "null_entry" in self.email_recipients and self.email_enabled:
+            self.email_enabled = False
 
         if self.email == "" or self.email == None or not isinstance(self.email,str):
             print("no source sender email allocated in config.yaml. Please see README.md")
@@ -330,11 +338,13 @@ class Config():
         current_load = current_load - (1 - self.load)
         return current_load
 
+
     def build_time(self,mins,back_forward,time="now"):
         if time == "now":
             new_time = datetime.now(self.tz)
         else:
             new_time = time
+
         if back_forward == "forward":
             new_time = new_time + timedelta(minutes=mins)
         elif back_forward == "backward":
@@ -343,6 +353,7 @@ class Config():
             new_time = new_time - timedelta(minutes=(new_time.minute%mins)-mins)
         elif back_forward == "closest_backward":
             new_time = new_time - timedelta(minutes=new_time.minute%mins)
+
         new_time = datetime.strftime(new_time,"%H:%M")
         new_time = datetime.strptime(new_time,"%H:%M").time()
 

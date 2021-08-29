@@ -40,6 +40,8 @@ spinner="-\|/"
 dev_flag=true
 config_steps=11
 current_step=1
+g_install_issue=false # global installation issue
+beta_version_found=false
 branch_name="v1.3_feature_install_package" # dev vs. prod
 declare -A userdata
 
@@ -48,6 +50,12 @@ AUTOMATION_VERSION="1.2"
 
 function dag_statement()
 {
+    if [[ $g_install_issue = true ]]; then
+        printf "${red}${bld}${start_under}INSTALL ISSUE FOUND${clr}${red}\n"
+        printf "During the installation some of the install elements did not\n"
+        printf "seamingly install correctly.  Please verify the installation\n"
+        printf "by following the ${start_under}${wht}README.md${clr}\n\n"
+    fi
     printf "${clr}${bld}${cyn}DAG, \$DAG it! You node if you node.\n\n${clr}"
 }
 
@@ -102,6 +110,35 @@ function new_section()
 }
 
 
+function print_install_error_msg()
+{
+    printf "\n\n${red}${bld}${start_under}ERROR${end_under}:${clr}${red} Something went wrong with this installation...\n"
+    printf "${yel}The install will continue; however, you will want to verify\n"
+    printf "the installation when done.\n\n${red}"
+    printf "You can attempt to run the ${cyn}adminauto -i${red} again after\n"
+    printf "the install is done. If the error messages and install issues persist\n"
+    printf "${mag}${bld}please open a Github issue, and let us know about it.\n"
+    printf "${wht}https://github.com/netmet1/constellation-node-automation/issues\n\n"
+    printf "${yel}Be sure to give details on ${mag}when error happened${clr}\n"
+    printf "${grn}Thank you for your help and patience\n"
+    printf "${bld}${yel}Note${clr}${yel}: You can connect up in the constellation community for help as well.${clr}\n\n"
+    question="Continue with installation anyway?"
+    test_yes_no continue_only y
+    install_issue_found=true
+    g_install_issue=true
+    printf "${yel}==> Continuing installation after possible error...\n\n"
+}
+
+
+function continue_only_exit_check()
+{
+    if [[ ${userdata[continue_only]} = false ]]; then
+        dag_statement
+        exit 0
+    fi
+}
+
+
 function prepare_existing_installation()
 {
     install_type=existing
@@ -110,10 +147,7 @@ function prepare_existing_installation()
     printf " Your existing logs and\nconfigurations will be ${grn}${start_under}retained and copied${end_under}${mag} over\nto the ${start_under}${yel}new${end_under}${mag} installation.${clr}\n"
     question="Continue with an upgrade?"
     test_yes_no continue_only n
-    if [[ ${userdata[continue_only]} = false ]]; then
-        dag_statement
-        exit 0
-    fi
+    continue_only_exit_check
     printf "${grn}==> Backing up configuration...\n"
     cp $HOME/cn_automation/configs/config.yaml /var/tmp/config.automation.tmp
     if [[ ! -d /var/tmp/automation_node_logs ]]; then
@@ -121,27 +155,36 @@ function prepare_existing_installation()
     fi
     printf "==> Backing up logs...\n"
     cp $HOME/cn_automation/logs/* /var/tmp/automation_node_logs/
-    perform_installation
 }
 
 
 function prepare_new_installation()
 {
     install_type=new
+    install_issue_found=false
+    whoami=$(whoami)
+    if [[ $whoami != "root" ]]; then
+        printf "${red}${bld}Error: cannot continue\n${clr}"
+        printf "${yel}Please run ${cyn}sudo adminauto -i${yel} instead of ${cyn}adminauto -i${yel}\n"
+        printf "in order to run this program with root priviledges..."
+        dag_statement
+        exit 0
+    fi
 
     printf "${red}${bld}WARNING${mag} This will do a ${wht}Ubuntu${mag} update to your system\n"
     printf "and install ${red}if necessary${mag} some necessary packages including...\n"
     printf "${cyn}Python3, Python Package Manager, and Python Dependency libraries\n${clr}"
     question="Do you want to continue? "
     test_yes_no continue_only n
-    if [[ ${userdata[continue_only]} = false ]]; then
-        dag_statement
-        exit 0
-    fi
+    continue_only_exit_check
 
     printf "\n${yel}==> Peforming a Ubuntu update... (${cyn}please wait${yel})"
-    apt-get update >/dev/null 2>&1
-    printf "\r==> Peforming a Ubuntu update... ${grn}completed            \n"
+    apt-get update >/dev/null 2>&1 || print_install_error_msg &&
+    if [[ $install_issue_found = false ]]; then
+        printf "\r==> Peforming a Ubuntu update... ${grn}completed            \n"
+    else
+        install_issue_found=false # reset
+    fi
 
     printf "${yel}==> Checking for Python3...${clr}"
     test=$(python3 --version 2>/dev/null | wc -l)
@@ -149,8 +192,13 @@ function prepare_new_installation()
         printf "\nDid not find Python3 on your system...\n"
         printf "Installing Python3 this can take\n"
         printf "a little time... (${cyn}please wait${clr})"
-        apt-get -y install python3 >/dev/null 2>&1
-        printf "\ra little time...  ${grn}success${yel}               \n\n"
+        apt-get -y install python3 >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\ra little time...  ${grn}success${yel}               \n\n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
     else 
         printf "${yel}\r==> Checking for Python3... ${grn}success${yel}\n"
     fi
@@ -162,25 +210,82 @@ function prepare_new_installation()
         printf "\nDid not find the package manager on your system...\n"
         printf "Installing Python Package Manager this can take\n"
         printf "${red}more than${clr} a little time be patient... (${cyn}please wait${clr})"
-        apt-get -y install python3-pip >/dev/null 2>&1
-        printf "\r${red}more than${clr} a little time be patient... ${grn}success${yel}     \n\n"
+        apt-get -y install python3-pip >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\r${red}more than${clr} a little time be patient... ${grn}success${yel}     \n\n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
     else 
         printf "${yel}\r==> Checking for Python3 Package Manager... ${grn}success${yel}\n"
     fi
 
     printf "${yel}==> Checking for Automation.py dependencies...${clr}"
-    test=$(pip3 freeze | grep 'pytz' | wc -l)
+    test=$(pip3 freeze | grep -i 'pytz' | wc -l)
+    dependencies_met=true
     if [[ $test -eq  0 ]]; then
+        dependencies_met=false
         printf "\nMissing pytz...\n"
         printf "Installing, this can take a little time... (${cyn}please wait${clr})"
-        pip3 install pytz >/dev/null 2>&1
-        printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
-    else 
-        printf "${yel}\r==> Checking for Automation.py dependencies... ${grn}success${clr}\n"
+        pip3 install pytz >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
+    fi
+    test=$(pip3 freeze | grep -i 'requests' | wc -l)
+    if [[ $test -eq  0 ]]; then
+        dependencies_met=false
+        printf "\nMissing requests...\n"
+        printf "Installing, this can take a little time... (${cyn}please wait${clr})"
+        pip3 install requests >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
+    fi
+    test=$(pip3 freeze | grep -i 'yaml' | wc -l)
+    if [[ $test -eq  0 ]]; then
+        dependencies_met=false
+        printf "\nMissing Python yaml...\n"
+        printf "Installing, this can take a little time... (${cyn}please wait${clr})"
+        pip3 install pyyaml >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi        
     fi
 
-    echo
-    printf "${bld}${cyn}Installation of system files completed successfully!\n"
+    if [[ $dependencies_met = true ]]; then 
+        printf "${yel}\r==> Checking for Automation.py dependencies... ${grn}success${clr}\n"
+    else
+        printf "\n${yel}==> Dependency installs ${grn}complete${clr}\n"
+    fi
+
+    printf "${yel}==> Checking to make sure your system has cron installed...${clr}"
+    test=$(which cron | wc -l)
+    if [[ $test = 0 ]]; then
+        printf "\nDid not find the cron manager on your system...\n"
+        printf "${yel}==> Installing CRON... "
+        apt-get -y install cron >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+           printf "\r${yel}==> Installing CRON... ${grn}success${yel}          \n\n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi 
+    else 
+        printf "\r${yel}==> Checking to make sure your system has cron installed... ${grn}success${yel}\n"
+    fi
+
+    printf "\n\n${bld}${cyn}Installation of system files completed successfully!\n"
     printf "We are now ready to work on the automation program itself...\n"
 
     printf "\n${grn}We could ${start_under}not${end_under} find your ${bld}${yel}config.yaml${clr}${grn} file.\n"
@@ -188,11 +293,7 @@ function prepare_new_installation()
     printf "${red}${bld}WARNING${clr}${yel} Any existing configs and logs will be removed!\n\n"
     question="Continue with ${start_under}${grn}new${end_under}${yel} installation?"
     test_yes_no continue_only n
-    if [[ ${userdata[continue_only]} = false ]]; then
-        dag_statement
-        exit 1
-    fi
-    perform_installation
+    continue_only_exit_check
 }
 
 
@@ -203,6 +304,7 @@ function special_case_beta_upgrade()
         beta_version_count=$(ls -l $HOME/ | grep "node-automation" | wc -l)
         beta_version=$(ls -l $HOME/ | grep "node-automation" | awk '{print $9}')
         if [[ $beta_version_count > 0 ]]; then
+            beta_version_found=true
             printf "\r${yel}Checking for previous BETA releases... ${grn}found beta${crl}\n\n"
             printf "${bld}${red}SPECIAL CASE${clr}\n"
             printf "${mag}${bld}${start_under}If you${end_under}${clr}${cyn} fall into the category of early adopters, and you did ${start_under}not${end_under} follow\n"
@@ -267,64 +369,65 @@ function special_case_beta_upgrade()
             printf "${yel}If you believe their is a beta release on this system, please backup\n"
             printf "your configs and logs manually before continuing...\n"
         fi
-    #else
-        # printf "${cyn}There is a ${wht}non-beta${cyn} version of this program found\n"
-        # printf "We will not be using any ${wht}beta versions${cyn} to continue.\n"  
-        # printf "If you have logs and configs, they will not be used or saved\n"
-        # printf ", and the beta installation will not be removed.\n"
     fi
 }
 
 
 function perform_installation()
 {
-            print_banner 1
-            printf "${yel}==> Cleaning up previous version (moving to /var/tmp/)\n"
-            rm -rf /var/tmp/cn_automation${AUTOMATION_VERSION}
-            mv -f $HOME/cn_automation/ /var/tmp/cn_automation${AUTOMATION_VERSION}
-            printf "${bld}${yel}Starting Installation...\n${clr}"
-            printf "${yel}==> Downloading new source code... (${cyn}Please Wait${yel}) "
-            wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}b.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}b.tar.gz >/dev/nul 2>&1
-            printf "\r==> Downloading new source code... ${grn}Done!${yel}                  \n"
-            printf "==> Installing... (${red}Please Wait"
-            tar xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
-            printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
+    print_banner 1
+    
+    printf "${yel}==> Cleaning up previous version (moving to /var/tmp/)\n"
+    if [[ -f /var/tmp/cn_automation${AUTOMATION_VERSION} ]]; then
+        rm -rf /var/tmp/cn_automation${AUTOMATION_VERSION}
+    fi
+    
+    if [[ -d $HOME/cn_automation/ ]]; then
+        mv -f $HOME/cn_automation/ /var/tmp/cn_automation${AUTOMATION_VERSION}
+    fi
+    
+    printf "${bld}${yel}Starting Installation...\n${clr}"
+    printf "${yel}==> Downloading new source code... (${cyn}Please Wait${yel}) "
+    wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}b.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}b.tar.gz >/dev/nul 2>&1
+    printf "\r==> Downloading new source code... ${grn}Done!${yel}                  \n"
+    printf "==> Installing... (${red}Please Wait"
+    tar xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
+    printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
 
-            printf "==> Cleaning up..."
-            rm /var/tmp/v${AUTOMATION_VERSION}b.tar.gz
-            mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}b/ $HOME/cn_automation
-            printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
+    printf "==> Cleaning up..."
+    rm /var/tmp/v${AUTOMATION_VERSION}b.tar.gz
+    mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}b/ $HOME/cn_automation
+    printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
 
-            if [[ $install_type = new ]]; then
-                printf "==> Preparing the configuration file for review..."
-                cp /$HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
-                printf "\r==> Preparing the configuration file for review... ${grn}Done!${yel}\n"
-            fi
+    if [[ $install_type = new ]]; then
+        printf "==> Preparing the configuration file for review..."
+        cp /$HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
+        printf "\r==> Preparing the configuration file for review... ${grn}Done!${yel}\n"
+    fi
 
-            warn_suggest=true
-            if [[ $install_type = "existing" ]]; then
-                print_existing_config_banner
-            fi
+    warn_suggest=true
+    if [[ $install_type = "existing" ]]; then
+        print_existing_config_banner
+    fi
 
-            if [[ $warn_suggest = true ]]; then
-                config_verify_skipped=false
-                printf "\n${bld}${b_wht}${blk}${start_under}HIGHLY SUGGESTED${end_under}${clr}${yel}\nPLEASE OPENING THE ${start_under}${bld}README.md${clr}${yel} file from the GitHub Repository.\n"
-                printf "Clicking on the ${grn}configuration${yel} section.\nThis will be ${bld}${grn}VERY${clr}${yel} important to make sure you understand\n"
-                printf "the configuration questions about to be asked!\n\n"
-                printf "${clr}"
-                printf "https://github.com/netmet1/constellation-node-automation/blob/main/README.md\n\n"
-                if [[ $install_type = new ]]; then
-                    printf "${bld}${mag}We now have to configure your automation alerting program instance.${clr}\n"
-                    read -e -p "${yel}Press <enter> key to start configuration: " enterkey
-                else
-                    read -e -p "${yel}Press <enter> key to review your configuration file: " enterkey
-                fi
-                perform_configuration
-                build_yaml
-            else
-                config_verify_skipped=true
-                clean_up_and_complete
-            fi
+    if [[ $warn_suggest = true ]]; then
+        config_verify_skipped=false
+        printf "\n${bld}${b_wht}${blk}${start_under}HIGHLY SUGGESTED${end_under}${clr}${yel}\nPLEASE OPENING THE ${start_under}${bld}README.md${clr}${yel} file from the GitHub Repository.\n"
+        printf "Clicking on the ${grn}How to Configure${yel} (Parameter Description Table) section.\nThis will be ${bld}${grn}VERY${clr}${yel} important to make sure you understand\n"
+        printf "the configuration questions about to be asked!\n\n"
+        printf "${clr}"
+        printf "https://github.com/netmet1/constellation-node-automation/blob/main/README.md\n\n"
+        if [[ $install_type = new ]]; then
+            printf "${bld}${mag}We now have to configure your automation alerting program instance.${clr}\n"
+            read -e -p "${yel}Press <enter> key to start configuration: " enterkey
+        else
+            read -e -p "${yel}Press <enter> key to review your configuration file: " enterkey
+        fi
+        perform_configuration
+        build_yaml
+    else
+        config_verify_skipped=true
+    fi
 
 }
 
@@ -348,7 +451,11 @@ function progress_done()
 function assign_userdata()
 {
     if [[ -z $value2 ]]; then
-        value=$value1
+        if [[ -z $value1 ]]; then
+            value="null_entry"
+        else
+            value=$value1
+        fi
     else
         value=$value2
     fi
@@ -455,7 +562,7 @@ function perform_configuration()
     add_mms=$value2
     if [[ $value2 = [Yy] ]]; then
         printf "${clr}${yel}Please enter the email address associated with the SMS/MMS recipients\n"
-        printf "See the README.md for explaination on how to find the coorelating SMS/MMS\n"
+        printf "${yel}See the README.md for explaination on how to find the coorelating SMS/MMS\n"
         printf "gateway to send to your number via your mobile carrier\n"
         printf "in the following format:\n"
         printf "${bld}${mag}number1@mms.gateway.com,number2@mms.gateway.com${clr}${yel}\n"
@@ -521,7 +628,7 @@ function perform_configuration()
 
     printf "\n${bld}${mag}You may ${red}ONLY${mag} want health checks.\n"
     printf "You can disable the automation program alerts here and it will\n"
-    printf "disable this feature here, allowing only for health checks.\n${clr}"
+    printf "disable this feature, allowing only for health checks.\n${clr}"
     value1=$(sed '/intervals/,/healthcheck/!d' /var/tmp/config.automation.tmp | grep "enabled" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
     question="Do you want to enable alerts?" 
     test_yes_no alerts_enabled
@@ -853,7 +960,6 @@ function build_yaml()
         read -e -p "Press <enter> to continue... " enterkey
         new_config=false
     fi
-    clean_up_and_complete
 }
 
 
@@ -875,12 +981,18 @@ function clean_up_and_complete()
             printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild\nconfiguration if necessary.\n" 
         fi
     else
-        if [[ config_verify_skipped = false ]]; then
+        if [[ $config_verify_skipped = false ]]; then
             printf "${bld}${grn}==> Placing new configuration in place...\n${clr}"
             cp /var/tmp/new_config.yaml $HOME/cn_automation/configs/config.yaml
         else
-            printf "${yel}Sending original unchanged config to new upgrade...\n${clr}"
-            cp /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml $HOME/cn_automation/configs/config.yaml
+            printf "${yel}Sending original unchanged config to new upgrade...${clr}"
+            if [[ -f /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml ]]; then
+                cp /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml $HOME/cn_automation/configs/config.yaml
+                printf "\r${yel}Sending original unchanged config to new upgrade... ${grn}success${clr}\n"
+            else
+                printf "\r${yel}Sending original unchanged config to new upgrade... ${red}failed${clr}\n"
+                printf "${red}Something went wrong${yel}, please rerun ${cyn}adminauto -c${clr} after installation is complete${clr}\n"
+            fi
         fi
     fi
 
@@ -1075,7 +1187,7 @@ function print_help_menu()
     echo
     printf "${grn}${start_under}Node Operator Automation Helper Script${end_under}\n"
     printf "${wht}${b_mag}Version: ${bld}${AUTOMATION_VERSION}${clr}\n\n"
-    printf "${yel}${bld}usage: adminauto [-h] [-i] [-c] [-s] [-r] [-k] [-v] ${clr}\n\n"
+    printf "${yel}${bld}usage: adminauto [-h] [-i] [-c] [-s] [-r] [-k] [-v] [-cr]${clr}\n\n"
     printf "${grn}${bld}THIS IS FOR USE WITH THE \"AUTO\" ARGUMENT (auto run)${clr}\n"
     printf "${grn}This does not deal with single alerts, reports, or logs\n\n"
     printf "This does not deal with the program running locally in the current user session"
@@ -1083,10 +1195,17 @@ function print_help_menu()
     printf "${bld}${start_under}Positional arguments${end_under}:${clr}\n"
     printf "${bld}${yel} -h${clr}${wht}        show this help message\n\n"
     printf "${bld}${yel} -v${clr}${wht}        show program's current version\n\n"
-    printf "${bld}${yel} -i${clr}${wht}        first time installation (otherwise you should use -u for upgrade)\n"
+    printf "${bld}${yel} -i${clr}${wht}        first time installation or upgrade existing version\n"
+    printf "                                   (script will auto-detect).\n"
+    printf "${bld}${yel} -cr${clr}${wht}       setup cron only.\n"
     # printf "${bld}${yel} -u${clr}${wht}        upgrade automation script.  If an installation is not detected, you\n"
     # printf "           receive a warning\n"
     printf "${bld}${yel} -c${clr}${wht}        guided help to update the configuration ${start_under}only${end_under}.\n\n"
+    printf "${bld}${yel} -a${clr}${wht}        send alert to mms/sms/email ${cyn}(unless -p is used)${clr}.\n"
+    printf "${bld}${yel} -l${clr}${wht}        send health check to mms/sms/email ${cyn}(unless -p is used)${clr}.\n"
+    printf "${bld}${yel} -e${clr}${wht}        send end of day report to mms/sms/email ${cyn}(unless -p is used)${clr}.\n\n"
+    printf "${bld}${yel} -p${clr}${wht}        print to console and override alert, report, or health check from.\n"
+    printf "                                   being sent to sms/mms/email.\n\n"
     printf " =========================== \n\n"
     printf "${bld}${yel} -s${clr}${wht}        start the automation program if not running\n"
     printf "           this will start the program in the background\n"
@@ -1110,6 +1229,34 @@ function print_help_menu()
 case "$1" in
     -i) action="install";;
     -u) action="upgrade";;
+    -a) action="alert" 
+        if [[ $2 = "-p" ]]; then
+            action="alert_console"
+        fi
+        ;;
+    -l) action="health"
+        if [[ $2 = "-p" ]]; then
+            action="health_console"
+        fi
+        ;;
+    -e) action="report"
+        if [[ $2 = "-p" ]]; then
+            action="report_console"
+        fi
+        ;;
+    -p) case "$2" in
+            -a)
+            action="alert_console"
+            ;;
+            -l)
+            action="health_console"
+            ;;
+            -e)
+            action "report_console"
+            ;;
+        esac
+        ;;
+    -ci) action="cron";;
     -c) action="configure"
         # remove cron step
         config_steps=`expr $config_steps - 1`
@@ -1128,6 +1275,7 @@ case "$1" in
         exit 0
         ;;
     *) action="none"
+        print_help_menu
         dag_statement
         exit 0
         ;;
@@ -1186,8 +1334,10 @@ if [[ ${userdata[continue_only]} == true ]]; then
         install) 
             special_case_beta_upgrade # check if user is attempting to upgrade from beta version
                                       # this would mean that they manually installed the program
+                                      # also works for manual installations that might be trying
+                                      # to convert to adminauto
             check_version_for_upgrade
-            if [[ skip_version_continue = false ]]; then
+            if [[ $skip_version_continue = false ]]; then
                 question="Continue?"
                 test_yes_no continue_only n
             else
@@ -1199,6 +1349,8 @@ if [[ ${userdata[continue_only]} == true ]]; then
                 else
                     prepare_new_installation
                 fi
+                perform_installation
+                clean_up_and_complete
             fi
             ;;
         
@@ -1211,6 +1363,37 @@ if [[ ${userdata[continue_only]} == true ]]; then
             fi
             perform_configuration
             build_yaml
+            clean_up_and_complete
+            ;;
+
+        cron)
+            check_version_for_upgrade
+            config_steps=1
+            configure_cron_tab
+            ;;
+
+        alert)
+            python3 $HOME/cn_automation/automation alert
+            ;;
+
+        alert_consolde)
+            python3 $HOME/cn_automation/automation alert -p
+            ;;
+
+        report)
+            python3 $HOME/cn_automation/automation report
+            ;;
+
+        report_console)
+            python3 $HOME/cn_automation/automation report -p
+            ;;
+
+        health)
+            python3 $HOME/cn_automation/automation health
+            ;;
+
+        health_consolde)
+            python3 $HOME/cn_automation/automation health -p
             ;;
 
         *) printf "$invalid_error"
