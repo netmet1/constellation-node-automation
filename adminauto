@@ -42,10 +42,10 @@ config_steps=11
 current_step=1
 g_install_issue=false # global installation issue
 beta_version_found=false
-branch_name="v1.3_feature_install_package" # dev vs. prod
+branch_name="main" # dev vs. prod
 declare -A userdata
 
-AUTOMATION_VERSION="1.2"
+AUTOMATION_VERSION="2.0"
 
 
 function dag_statement()
@@ -1146,7 +1146,7 @@ function configure_cron_tab()
 function check_version_for_upgrade()
 {
     printf "\n${yel}Checking automation script and program versioning... (${red}please wait${yel}) "
-    prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/v1.3_feature_install_package/adminauto | grep "AUTOMATION_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
+    prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/adminauto | grep "AUTOMATION_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
     printf "\r${yel}Checking automation program and autoadmin script versioning... ${grn}complete!                   "
     printf "\nLatest Version: ${cyn}${bld}$prod_version${clr}  ${grn}Current Version: ${cyn}${bld}$AUTOMATION_VERSION${clr}\n\n"
     skip_version_continue=false
