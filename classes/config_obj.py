@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import os
 import yaml
 import re
+import pytz
 
 class Config():
 
@@ -42,7 +43,7 @@ class Config():
 
 
     def setup_dates_times(self):
-        self.current_date = datetime.now().strftime("%Y-%m-%d")
+        self.current_date = datetime.now(self.tz).strftime("%Y-%m-%d")
 
         try:
             start = datetime.strptime(self.config['intervals']['start_time'], "%H:%M")
@@ -90,23 +91,28 @@ class Config():
     def setup_variables(self):
         self.action = self.dag_args.Action
         self.last_run = "never"
+        self.tz = pytz.timezone(self.config['intervals']['time_zone'])
         self.dag_log_file = self.path.replace("classes","logs/dag_count.log")
         self.dag_log_file_path = self.path.replace("classes","logs/")        
-        self.mms_email_recipients = self.config['email']['mms_recipients']
-        self.email = self.config['email']['gmail_acct']
-        self.token = self.config['email']['gmail_token']
+        self.mms_recipients = self.config['notifications']['mms_recipients']['list']
+        self.email_recipients = self.config['notifications']['email_recipients']['list']
+        self.mms_subject = self.config['notifications']['mms_recipients']['add_subject']
+        self.email = self.config['notifications']['gmail_acct']
+        self.token = self.config['notifications']['gmail_token']
         self.error_max = self.config['constraints']['error_max']
         self.mem_swap_min = self.config['constraints']['memory_swap_min']
         self.uptime = self.config['constraints']['uptime_threshold']
         self.load = self.config['constraints']['load_threshold'] 
-        self.username = self.config['email']['node_username']
-        self.node_name = self.config['email']['node_name']
+        self.username = self.config['notifications']['node_username']
+        self.node_name = self.config['notifications']['node_name']
         self.split1 = self.config['splits']['split1']
         self.split2 = self.config['splits']['split2']
         self.collateral_nodes = self.config['collateral']['node_count']
+        self.free_dag = self.config['collateral']['free_dag']
         self.report_estimates = self.config['report']['estimates']
         self.alert_interval = self.config['intervals']['int_minutes']
 
+        self.alerts_enabled = self.config["intervals"]["enabled"]
         self.health_enabled = self.config["healthcheck"]["enabled"]
         self.lb = self.config["healthcheck"]["lb"]
         self.node = self.config["healthcheck"]["node_ip"]
@@ -128,7 +134,7 @@ class Config():
 
 
     def setup_flags(self):
-        if self.action == "silent":
+        if self.action == "silent" or self.alerts_enabled == False:
             self.silence_email = True
             self.silence_writelog = False
             self.local = False
@@ -174,8 +180,15 @@ class Config():
         self.health_alarm_once = self.config['healthcheck']['alarm_once']
         self.health_failure = None
 
+        self.mms_enabled = self.config['notifications']['mms_recipients']['enabled']
+        self.email_enabled = self.config['notifications']['email_recipients']['enabled']
+
 
     def config_default_check(self):
+
+        if self.tz == "null_entry":
+            self.tz = "UTC"
+
         try:
             int(self.error_max)
         except:
@@ -192,6 +205,15 @@ class Config():
             if self.mem_swap_min == -1:
                 self.mem_swap_min = 1000000
  
+        try:
+            self.free_dag = re.sub('\D', '', str(self.free_dag)) # make sure only digits
+            self.free_dag = int(self.free_dag)
+            int(self.free_dag)
+        except:
+            self.free_dag = 0
+        else:
+            self.free_dag = int(self.free_dag)
+
         try:
             int(self.alert_interval)
         except:
@@ -250,9 +272,29 @@ class Config():
             if self.health_int > 60:
                 self.health_int = 60
 
-        if not isinstance(self.mms_email_recipients,list): 
-            print("no recipients have been specified, or error in config.yaml.  Please see README.md")
+        if not isinstance(self.alerts_enabled,bool):
+            self.alerts_enabled = True
+
+        if not isinstance(self.mms_enabled,bool):
+            self.mms_enabled = True
+        if not isinstance(self.email_enabled,bool):
+            self.email_enabled = False
+
+        if not self.email_enabled and not self.mms_enabled:
+            print("at least one notification recipient type (email/mss) needs to be enabled. Please see README.md")
             exit(1)
+
+        if not isinstance(self.mms_recipients,list): 
+            print("no sms/mms recipients have been specified, or error in config.yaml.  Please see README.md")
+            exit(1)
+        if "null_entry" in self.mms_recipients and self.mms_enabled:
+            self.mms_enabled = False
+
+        if not isinstance(self.email_recipients,list): 
+            print("no email recipients have been specified, or error in config.yaml.  Please see README.md")
+            exit(1)
+        if "null_entry" in self.email_recipients and self.email_enabled:
+            self.email_enabled = False
 
         if self.email == "" or self.email == None or not isinstance(self.email,str):
             print("no source sender email allocated in config.yaml. Please see README.md")
@@ -296,11 +338,13 @@ class Config():
         current_load = current_load - (1 - self.load)
         return current_load
 
+
     def build_time(self,mins,back_forward,time="now"):
         if time == "now":
-            new_time = datetime.now()
+            new_time = datetime.now(self.tz)
         else:
             new_time = time
+
         if back_forward == "forward":
             new_time = new_time + timedelta(minutes=mins)
         elif back_forward == "backward":
@@ -309,6 +353,7 @@ class Config():
             new_time = new_time - timedelta(minutes=(new_time.minute%mins)-mins)
         elif back_forward == "closest_backward":
             new_time = new_time - timedelta(minutes=new_time.minute%mins)
+
         new_time = datetime.strftime(new_time,"%H:%M")
         new_time = datetime.strptime(new_time,"%H:%M").time()
 

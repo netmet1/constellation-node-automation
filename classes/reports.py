@@ -1,16 +1,18 @@
 import os
 import re
 from datetime import datetime, timedelta
+from classes.check_dag_status import CheckDagStatus
 
 class CreateReport():
 
-    def __init__(self, report_type, usd_dag_price,config):
+    def __init__(self, report_type, buildReport, config):
         self.config = config
-        self.usd_dag_price = usd_dag_price
+        self.usd_dag_price = buildReport.usd_dag_price
+        self.collateral_str = buildReport.col_str
         self.report_type = report_type
 
-        self.today = datetime.now().strftime("%Y-%m-%d")
-        self.time = datetime.now().strftime("%H:%M")
+        self.today = datetime.now(self.config.tz).strftime("%Y-%m-%d")
+        self.time = datetime.now(self.config.tz).strftime("%H:%M")
         # self.today = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         self.report_str = ""
@@ -100,6 +102,8 @@ END OF DAY REPORT
 Report Range: {self.config.day_time_frame} 
 START: {self.config.current_date} {self.config.start_time}
 END: {self.config.current_date} {self.config.end_time}
+---
+{self.collateral_str[1:]}
 ---
 REWARDS: {self.dag_metrics[0]:,}
 AVE/15Min: {self.dag_metrics[1]:,}

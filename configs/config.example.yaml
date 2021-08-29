@@ -1,5 +1,5 @@
+# =======================================================
 # DAG Node Alerting Program
-# v1.1b
 # Author: hgtp://netmet
 # ========================
 #
@@ -10,43 +10,54 @@
 #             INCORRECT settings could leave to not only
 #             unpredictable runtime issues, but it could
 #             lead to inaccurate stats and information.
-# 
+#
+# =======================================================
 
 configuration:
-  email:
+  notification:
+    node_name: My_Node
     node_username: root
     gmail_acct: gmail_source_email@gmail.com
     gmail_token: gmail_app_password
+    email_recipients:
+      enabled: false
+      list:
+        - whoever1@whoever.com
+        - whoever2@whoever.com
     mms_recipients:
+      enabled: true
+      add_subject: true
+      list:
         - 111111111@provider.gateway.net
         - 222222222@provider.gateway.net
-        - whoever@whoever.com
-    node_name: My_Node
+  intervals:
+    enabled: true
+    time_zone: UTC
+    start_time: '07:00'
+    end_time: '20:00'
+    int_minutes: 15
+  healthcheck:
+    enabled: true
+    lb: put_the_constellation_lb_fully_qualified_domain_name_here
+    lb_port: 9000
+    node_ip: your_nodes_ext_ip_here
+    node_port: 9001
+    int_minutes: 15
+    alarm_once: true
+  splits:
+    enabled: false
+    split1: .7
+    split2: .3
+  collateral:
+    enabled: true
+    node_count: 1
+    free_dag: 0
   constraints:
     error_max: 20
     memory_swap_min: 200000
     security_check: true
     uptime_threshold: 30
     load_threshold: .7
-  healthcheck:
-    enabled: false
-    lb: put_the_constellation_lb_fully_qualified_domain_name_here
-    lb_port: 9000
-    node_ip: your_nodes_ext_ip_here
-    node_port: 9001
-    int_minutes: 5
-    alarm_once: true
-  intervals:
-    start_time: '07:00'
-    end_time: '20:00'
-    int_minutes: 15
-  splits:
-    enabled: false
-    split1: .7
-    split2: .3
-  collateral:
-    enabled: false
-    node_count: 1 
   report:
     enabled: true
     estimates:
@@ -57,5 +68,3 @@ configuration:
       - 5
       - 10
       - 50
-      - 100
-      - 34000

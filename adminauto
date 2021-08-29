@@ -1,0 +1,1414 @@
+#!/bin/bash
+# ====================================
+# 
+#  DAG Automation Administration Script
+#  for installing, upgrading, starting,
+#  stopping, and restarting the 
+#  constellation node automation script
+#  
+#  last update:  2021-08
+#  author:  hgtp://netmet
+#
+#  DISCLAIMER:  I do not work for 
+#  Constellation Network however I am
+#  a proud member of the community and
+#  this is just a script to help the 
+#  community.
+#
+# ==================================== 
+
+blk=$(tput setaf 0)
+red=$(tput setaf 1)
+grn=$(tput setaf 2)
+yel=$(tput setaf 3)
+blu=$(tput setaf 4)
+mag=$(tput setaf 5)
+cyn=$(tput setaf 6)
+wht=$(tput setaf 7)
+b_blu=$(tput setb 1)
+b_grn=$(tput setb 2)
+b_cyn=$(tput setb 3)
+b_red=$(tput setb 4)
+b_mag=$(tput setb 5)
+b_yel=$(tput setb 6)
+b_wht=$(tput setb 7)
+clr=$(tput sgr0)
+bld=$(tput bold)
+start_under=$(tput smul)
+end_under=$(tput rmul)
+spinner="-\|/"
+dev_flag=true
+config_steps=11
+current_step=1
+g_install_issue=false # global installation issue
+beta_version_found=false
+branch_name="v1.3_feature_install_package" # dev vs. prod
+declare -A userdata
+
+AUTOMATION_VERSION="1.2"
+
+
+function dag_statement()
+{
+    if [[ $g_install_issue = true ]]; then
+        printf "${red}${bld}${start_under}INSTALL ISSUE FOUND${clr}${red}\n"
+        printf "During the installation some of the install elements did not\n"
+        printf "seamingly install correctly.  Please verify the installation\n"
+        printf "by following the ${start_under}${wht}README.md${clr}\n\n"
+    fi
+    printf "${clr}${bld}${cyn}DAG, \$DAG it! You node if you node.\n\n${clr}"
+}
+
+
+function disclaimer()
+{
+    printf "${bld}${b_red}${wht}${start_under}DISCLAIMER - WARNING${clr}\n"
+    printf "\nAlthough this ${bld}${yel}AUTOADMIN${clr} script is intended\n"
+    printf "to help and do absolutely ${bld}${grn}${start_under}NO${clr} harm.\n\n"
+    printf "${bld}${red}** USE AT YOUR OWN RISK **${clr}\n\n"
+    printf "I am not employeed by Constellation.io; however,\n"
+    printf "I ${bld}${red}love${clr} the community and want to give back.\n\n"
+    printf "${wht}DESIGNED TO WORK ON UBUNTU ONLY (at the current moment).\n"
+    printf "${wht}Install directory: ${bld}${yel}\$HOME/cn_automation${clr}\n\n"
+}
+
+
+function print_banner()
+{
+    if [[ $1 = 1 ]]; then
+        clear
+    fi
+    printf "\n${bld}${grn}================================================== \n"
+    printf "==                                              == \n"
+    printf "==  ${start_under}CONSTELLATION NODE AUTOMATION SETUP SCRIPT${end_under}  == \n"
+    printf "==                                              == \n"
+    printf "==================================================${clr} \n"
+}
+
+
+function print_existing_config_banner()
+{
+    printf "\n${bld}${yel}HIGHLY RECOMMENDED TO REVIEW YOUR CONFIGURATION.\n" 
+    printf "${mag}As features are added, the configuration file may change.\n"
+    printf "Unexpected results are more likely than not to occur!${clr}\n"           
+    printf "${yel}Do you want to step through your current config\n"
+    printf "allowing you to add missing (${wht}new${yel}) info to enable new\n"
+    question="features and make changes as necessary?"
+    test_yes_no continue_only y
+    if [[ ${userdata[continue_only]} = false ]]; then
+        warn_suggest=false
+    fi
+}
+
+
+function new_section()
+{
+    print_banner 1
+    printf "${yel}New Section!, Continuing configuration...\n"
+    printf "${clr}You can just hit <enter> if value is correct.\n"
+    printf "${bld}${mag}REMEMBER TO USE THE ${start_under}README.md${clr}\n"
+}
+
+
+function print_install_error_msg()
+{
+    printf "\n\n${red}${bld}${start_under}ERROR${end_under}:${clr}${red} Something went wrong with this installation...\n"
+    printf "${yel}The install will continue; however, you will want to verify\n"
+    printf "the installation when done.\n\n${red}"
+    printf "You can attempt to run the ${cyn}adminauto -i${red} again after\n"
+    printf "the install is done. If the error messages and install issues persist\n"
+    printf "${mag}${bld}please open a Github issue, and let us know about it.\n"
+    printf "${wht}https://github.com/netmet1/constellation-node-automation/issues\n\n"
+    printf "${yel}Be sure to give details on ${mag}when error happened${clr}\n"
+    printf "${grn}Thank you for your help and patience\n"
+    printf "${bld}${yel}Note${clr}${yel}: You can connect up in the constellation community for help as well.${clr}\n\n"
+    question="Continue with installation anyway?"
+    test_yes_no continue_only y
+    install_issue_found=true
+    g_install_issue=true
+    printf "${yel}==> Continuing installation after possible error...\n\n"
+}
+
+
+function continue_only_exit_check()
+{
+    if [[ ${userdata[continue_only]} = false ]]; then
+        dag_statement
+        exit 0
+    fi
+}
+
+
+function prepare_existing_installation()
+{
+    install_type=existing
+    printf "${red}${bld}${start_under}WARNING${clr}\n"
+    printf "${bld}${mag}An ${start_under}${yel}existing${end_under}${mag} or ${start_under}${yel}previous${end_under}${mag} automation program exists, this\nwill upgrade the program."
+    printf " Your existing logs and\nconfigurations will be ${grn}${start_under}retained and copied${end_under}${mag} over\nto the ${start_under}${yel}new${end_under}${mag} installation.${clr}\n"
+    question="Continue with an upgrade?"
+    test_yes_no continue_only n
+    continue_only_exit_check
+    printf "${grn}==> Backing up configuration...\n"
+    cp $HOME/cn_automation/configs/config.yaml /var/tmp/config.automation.tmp
+    if [[ ! -d /var/tmp/automation_node_logs ]]; then
+        mkdir /var/tmp/automation_node_logs
+    fi
+    printf "==> Backing up logs...\n"
+    cp $HOME/cn_automation/logs/* /var/tmp/automation_node_logs/
+}
+
+
+function prepare_new_installation()
+{
+    install_type=new
+    install_issue_found=false
+    whoami=$(whoami)
+    if [[ $whoami != "root" ]]; then
+        printf "${red}${bld}Error: cannot continue\n${clr}"
+        printf "${yel}Please run ${cyn}sudo adminauto -i${yel} instead of ${cyn}adminauto -i${yel}\n"
+        printf "in order to run this program with root priviledges..."
+        dag_statement
+        exit 0
+    fi
+
+    printf "${red}${bld}WARNING${mag} This will do a ${wht}Ubuntu${mag} update to your system\n"
+    printf "and install ${red}if necessary${mag} some necessary packages including...\n"
+    printf "${cyn}Python3, Python Package Manager, and Python Dependency libraries\n${clr}"
+    question="Do you want to continue? "
+    test_yes_no continue_only n
+    continue_only_exit_check
+
+    printf "\n${yel}==> Peforming a Ubuntu update... (${cyn}please wait${yel})"
+    apt-get update >/dev/null 2>&1 || print_install_error_msg &&
+    if [[ $install_issue_found = false ]]; then
+        printf "\r==> Peforming a Ubuntu update... ${grn}completed            \n"
+    else
+        install_issue_found=false # reset
+    fi
+
+    printf "${yel}==> Checking for Python3...${clr}"
+    test=$(python3 --version 2>/dev/null | wc -l)
+    if [[ $test = 0 ]]; then
+        printf "\nDid not find Python3 on your system...\n"
+        printf "Installing Python3 this can take\n"
+        printf "a little time... (${cyn}please wait${clr})"
+        apt-get -y install python3 >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\ra little time...  ${grn}success${yel}               \n\n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
+    else 
+        printf "${yel}\r==> Checking for Python3... ${grn}success${yel}\n"
+    fi
+
+    printf "${yel}==> Checking for Python3 Package Manager...${clr}"
+    cd $HOME
+    test=$(pip3 --version 2>/dev/null | wc -l)
+    if [[ $test = 0 ]]; then
+        printf "\nDid not find the package manager on your system...\n"
+        printf "Installing Python Package Manager this can take\n"
+        printf "${red}more than${clr} a little time be patient... (${cyn}please wait${clr})"
+        apt-get -y install python3-pip >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\r${red}more than${clr} a little time be patient... ${grn}success${yel}     \n\n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
+    else 
+        printf "${yel}\r==> Checking for Python3 Package Manager... ${grn}success${yel}\n"
+    fi
+
+    printf "${yel}==> Checking for Automation.py dependencies...${clr}"
+    test=$(pip3 freeze | grep -i 'pytz' | wc -l)
+    dependencies_met=true
+    if [[ $test -eq  0 ]]; then
+        dependencies_met=false
+        printf "\nMissing pytz...\n"
+        printf "Installing, this can take a little time... (${cyn}please wait${clr})"
+        pip3 install pytz >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
+    fi
+    test=$(pip3 freeze | grep -i 'requests' | wc -l)
+    if [[ $test -eq  0 ]]; then
+        dependencies_met=false
+        printf "\nMissing requests...\n"
+        printf "Installing, this can take a little time... (${cyn}please wait${clr})"
+        pip3 install requests >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi
+    fi
+    test=$(pip3 freeze | grep -i 'yaml' | wc -l)
+    if [[ $test -eq  0 ]]; then
+        dependencies_met=false
+        printf "\nMissing Python yaml...\n"
+        printf "Installing, this can take a little time... (${cyn}please wait${clr})"
+        pip3 install pyyaml >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+            printf "\rInstalling, this can take a little time... (${grn}success${clr})     \n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi        
+    fi
+
+    if [[ $dependencies_met = true ]]; then 
+        printf "${yel}\r==> Checking for Automation.py dependencies... ${grn}success${clr}\n"
+    else
+        printf "\n${yel}==> Dependency installs ${grn}complete${clr}\n"
+    fi
+
+    printf "${yel}==> Checking to make sure your system has cron installed...${clr}"
+    test=$(which cron | wc -l)
+    if [[ $test = 0 ]]; then
+        printf "\nDid not find the cron manager on your system...\n"
+        printf "${yel}==> Installing CRON... "
+        apt-get -y install cron >/dev/null 2>&1 || print_install_error_msg &&
+        if [[ $install_issue_found = false ]]; then
+           printf "\r${yel}==> Installing CRON... ${grn}success${yel}          \n\n"
+        else
+            install_issue_found=false # reset
+            continue_only_exit_check
+        fi 
+    else 
+        printf "\r${yel}==> Checking to make sure your system has cron installed... ${grn}success${yel}\n"
+    fi
+
+    printf "\n\n${bld}${cyn}Installation of system files completed successfully!\n"
+    printf "We are now ready to work on the automation program itself...\n"
+
+    printf "\n${grn}We could ${start_under}not${end_under} find your ${bld}${yel}config.yaml${clr}${grn} file.\n"
+    printf "This appears to be a ${bld}${start_under}new${end_under}${clr}${grn} installation\n\n${clr}"
+    printf "${red}${bld}WARNING${clr}${yel} Any existing configs and logs will be removed!\n\n"
+    question="Continue with ${start_under}${grn}new${end_under}${yel} installation?"
+    test_yes_no continue_only n
+    continue_only_exit_check
+}
+
+
+function special_case_beta_upgrade()
+{
+    if [[ ! -d $HOME/cn_automation ]]; then
+        printf "${yel}Checking for previous BETA releases..."
+        beta_version_count=$(ls -l $HOME/ | grep "node-automation" | wc -l)
+        beta_version=$(ls -l $HOME/ | grep "node-automation" | awk '{print $9}')
+        if [[ $beta_version_count > 0 ]]; then
+            beta_version_found=true
+            printf "\r${yel}Checking for previous BETA releases... ${grn}found beta${crl}\n\n"
+            printf "${bld}${red}SPECIAL CASE${clr}\n"
+            printf "${mag}${bld}${start_under}If you${end_under}${clr}${cyn} fall into the category of early adopters, and you did ${start_under}not${end_under} follow\n"
+            printf "the directions from the ${wht}INSTALL.md${cyn} file originally...\n"
+            printf "It is strongly suggested that you ${red}manually${cyn} backup your ${wht}config.yaml${cyn}\n"
+            printf "and your ${wht}log files${cyn} before continuings.  Also you may want to\n"
+            printf "clean up the old installation before continuing...\n\n${clr}"
+
+            printf "${cyn}After installation completes successfully, it is \n"
+            printf "will move the older version(s) to ${wht}/var/tmp${cyn}.\n\n"
+            printf "${grn}This is done to avoid delete operations against the node\n"
+            printf "in sensitive directories... You can go back and clean up the\n"
+            printf "older versions later from ${wht}/var/tmp${grn} at your convenience.\n${clr}"        
+            
+            if [[ $beta_version_count > 1 ]]; then
+                printf "\n${red}Found multiple beta versions on this system.\n"
+                printf "This install will work with the ${wht}${start_under}latest${clr}${cyn} version.\n"
+                readarray -t multi_beta_version < <(ls -l $HOME/ | grep "node-automation" | awk '{print $9}')
+                printf "Version: ${b_wht}${bld}${blk} ${multi_beta_version[-1]} \n\n${clr}"
+                beta_version=${multi_beta_version[-1]}
+            elif [[ $beta_version_count > 0 ]]; then
+                printf "\n${yel}Found a previous version: ${b_wht}${bld}${blk} $beta_version \n\n${clr}"
+            fi
+
+            printf "${red}If this version is not correct, quit the install and manually\n"
+            printf "backup configs and logs, and then remove the other versions first.\n\n${clr}"
+
+            question="Do you want to use the version listed above to upgrade from?"
+            test_yes_no continue_only y
+            if [[ ${userdata[continue_only]} = true ]]; then
+                printf "${yel}Backing up configs and logs..."
+                mkdir $HOME/cn_automation
+                mkdir $HOME/cn_automation/configs
+                mkdir $HOME/cn_automation/logs
+                cp $HOME/$beta_version/configs/config.yaml $HOME/cn_automation/configs/
+                cp $HOME/$beta_version/logs/* $HOME/cn_automation/logs/    
+                printf "\r${yel}Backing up configs and logs... ${grn}Done!${clr}\n"
+
+                if [[ $beta_version_count > 1 ]]; then
+                    for i in "${!multi_beta_version[@]}"
+                    do
+                        printf "${yel}moving ${multi_beta_version[$i]} to /var/tmp (you can delete later)..."
+                        rm -rf /var/tmp/${multi_beta_version[$i]}
+                        mv -f $HOME/${multi_beta_version[$i]} /var/tmp/
+                        printf "\rmoving ${multi_beta_version[$i]} to /var/tmp (you can delete later)... ${grn}done!${clr}\n"
+                    done      
+                elif [[ $beta_version_count > 0 ]]; then
+                        printf "${yel}moving $beta_version to /var/tmp (you can delete later)..."
+                        rm -rf /var/tmp/$beta_version
+                        mv -f $HOME/$beta_version /var/tmp/
+                        printf "\rmoving $beta_version to /var/tmp (you can delete later)... ${grn}done!${clr}\n"
+                fi
+            else
+                printf "\n${cyn}You have elected ${red}NOT${cyn} to upgrade from a Beta version found\n"        
+                printf "Any logs or configs will not be backed or used to help you with the new install\n"        
+                printf "Installation will be a fresh install!\n\n" 
+                printf "To ${red}AVOID${cyn} this message in the future, clean up the beta version from your system\n"
+                printf "${red}skipping beta special case...${clr}\n"       
+            fi
+        else
+            printf "\r${yel}Checking for previous BETA releases... ${grn}No beta found${crl}\n"
+            printf "${yel}If you believe their is a beta release on this system, please backup\n"
+            printf "your configs and logs manually before continuing...\n"
+        fi
+    fi
+}
+
+
+function perform_installation()
+{
+    print_banner 1
+    
+    printf "${yel}==> Cleaning up previous version (moving to /var/tmp/)\n"
+    if [[ -f /var/tmp/cn_automation${AUTOMATION_VERSION} ]]; then
+        rm -rf /var/tmp/cn_automation${AUTOMATION_VERSION}
+    fi
+    
+    if [[ -d $HOME/cn_automation/ ]]; then
+        mv -f $HOME/cn_automation/ /var/tmp/cn_automation${AUTOMATION_VERSION}
+    fi
+    
+    printf "${bld}${yel}Starting Installation...\n${clr}"
+    printf "${yel}==> Downloading new source code... (${cyn}Please Wait${yel}) "
+    wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}b.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}b.tar.gz >/dev/nul 2>&1
+    printf "\r==> Downloading new source code... ${grn}Done!${yel}                  \n"
+    printf "==> Installing... (${red}Please Wait"
+    tar xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
+    printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
+
+    printf "==> Cleaning up..."
+    rm /var/tmp/v${AUTOMATION_VERSION}b.tar.gz
+    mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}b/ $HOME/cn_automation
+    printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
+
+    if [[ $install_type = new ]]; then
+        printf "==> Preparing the configuration file for review..."
+        cp /$HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
+        printf "\r==> Preparing the configuration file for review... ${grn}Done!${yel}\n"
+    fi
+
+    warn_suggest=true
+    if [[ $install_type = "existing" ]]; then
+        print_existing_config_banner
+    fi
+
+    if [[ $warn_suggest = true ]]; then
+        config_verify_skipped=false
+        printf "\n${bld}${b_wht}${blk}${start_under}HIGHLY SUGGESTED${end_under}${clr}${yel}\nPLEASE OPENING THE ${start_under}${bld}README.md${clr}${yel} file from the GitHub Repository.\n"
+        printf "Clicking on the ${grn}How to Configure${yel} (Parameter Description Table) section.\nThis will be ${bld}${grn}VERY${clr}${yel} important to make sure you understand\n"
+        printf "the configuration questions about to be asked!\n\n"
+        printf "${clr}"
+        printf "https://github.com/netmet1/constellation-node-automation/blob/main/README.md\n\n"
+        if [[ $install_type = new ]]; then
+            printf "${bld}${mag}We now have to configure your automation alerting program instance.${clr}\n"
+            read -e -p "${yel}Press <enter> key to start configuration: " enterkey
+        else
+            read -e -p "${yel}Press <enter> key to review your configuration file: " enterkey
+        fi
+        perform_configuration
+        build_yaml
+    else
+        config_verify_skipped=true
+    fi
+
+}
+
+
+function progress_done()
+{
+    if [[ $current_step > 1 ]]; then
+        local numer=`expr $current_step - 1`
+        local percent=$(echo $(( 100 * $numer / $config_steps )) | sed -e 's/..$/.&/;t' -e 's/.$/.0&/')
+    else
+        local percent=0
+    fi
+
+    printf "${clr}Section ${bld}${yel}$current_step${clr} of ${bld}${yel}$config_steps${clr} | "
+    printf "${bld}${yel}$percent${clr} percent done\n\n"
+    current_step=`expr $current_step + 1`
+
+}
+
+
+function assign_userdata()
+{
+    if [[ -z $value2 ]]; then
+        if [[ -z $value1 ]]; then
+            value="null_entry"
+        else
+            value=$value1
+        fi
+    else
+        value=$value2
+    fi
+
+    userdata[$1]=$value
+}
+
+
+function test_yes_no()
+{
+    if [[ $1 = "continue_only" ]];then
+        value1=true
+        yesno=$2
+    else
+        yesno=n
+        if [[ $value1 = true ]]; then
+            yesno=y
+        fi
+    fi
+
+    answered=false
+    while [ $answered = false ]; do
+        read -e -p "${yel}$question [${cyn} $yesno ${yel}]: ${clr}" value2
+
+        if [[ -z $value2 ]]; then
+            value2=$yesno
+        fi
+
+        answered=true
+        case $value2 in
+            [Yy]) userdata[$1]=true ;;
+            [Nn]) userdata[$1]=false ;;
+            [-z]) userdata[$1]=$value1 ;;
+            *) answered=false ;;
+        esac
+    done
+}
+
+
+function perform_configuration()
+{
+    if [[ $action = configure ]]; then
+       print_existing_config_banner
+    fi
+
+    print_banner 1
+
+    printf "${yel}==> Starting Configuration...\n"
+    printf "${clr}You can just hit <enter> if value is correct.\n"
+    printf "${grn}${bld}New or changed configuration settings may appear\n"
+    printf "as blank entires.  Refer to the README for hints\n${clr}"
+    printf "${bld}${blu}===> EMAIL SECTION${clr}\n"
+    progress_done
+
+    # node name    
+    value1=$(grep node_name /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    read -e -p "${yel}Enter the name of your node (not your username) [${cyn} $value1 ${yel}]: ${clr}" value2
+    assign_userdata node_name
+
+    # username
+    value1=$(grep node_username /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    read -e -p "${yel}Enter the username of the node box [${cyn} $value1 ${yel}]: ${clr}" value2
+    assign_userdata node_username
+
+    # gmail send account
+    value1=$(grep gmail_acct /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    printf "\n${yel}Enter in the gmail account you setup in order to send MMS/Emails through\n"
+    printf "See the INSTALL.md Setup Gmail section for details\n"
+    read -e -p "Gmail account email address? [${cyn} $value1 ${yel}]: " value2
+    assign_userdata gmail_acct
+
+    # gmail token
+    value1=$(grep gmail_token /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    printf "\n${yel}Enter your gmail account token needed for the automation program\n"
+    printf "See the INSTALL.md Setup Gmail section for details\n"
+    read -e -p "Gmail account email access token? [${cyn} $value1 ${yel}]:${clr} " value2
+    assign_userdata gmail_token
+
+    # email address receipients
+    echo
+    value1=$(sed '/email_recipients/,/mms_recipients/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
+    question="Are you going to be sending alerts to any email addresses?"
+    test_yes_no email_enabled
+    value1=$(sed '/email_recipients/,/mms_recipients/!d' /var/tmp/config.automation.tmp | grep "-" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | sed -e 's/ /,/g')
+    if [[ $value2 = [Yy] ]]; then
+        printf "${yel}Please enter the email recipients in the following format:\n"
+        printf "${bld}${mag}email@first.com,email2@second.com${clr}${yel}\n"
+        printf "no spaces, separated by commas if more than one email\n"
+        printf "[${cyn} $value1 ${yel}]:${clr}\n"
+        read -e -p "> " value2
+        assign_userdata email_recipients
+    else
+        userdata[email_recipients]=$value1
+    fi
+    
+    # sms/mms receipients
+    printf "\n${bld}Note:${clr}${bld}${mag} If you chose ${clr}${start_under}no${end_under}${bld}${mag} for the email section, you must "
+    printf "choose ${clr}${start_under}yes${end_under}${bld}${mag} here.\nYou must enable one or the other (or both)"
+    printf "for the program to function${clr}.\n"
+    value1=$(sed '/mms_recipients/,/intervals/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
+    question="Are you going to be sending alerts to any MMS phones numbers?"
+    test_yes_no mms_enabled
+    value1=$(sed '/mms_recipients/,/intervals/!d' /var/tmp/config.automation.tmp | grep "-" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | sed -e 's/ /,/g')
+    add_mms=$value2
+    if [[ $value2 = [Yy] ]]; then
+        printf "${clr}${yel}Please enter the email address associated with the SMS/MMS recipients\n"
+        printf "${yel}See the README.md for explaination on how to find the coorelating SMS/MMS\n"
+        printf "gateway to send to your number via your mobile carrier\n"
+        printf "in the following format:\n"
+        printf "${bld}${mag}number1@mms.gateway.com,number2@mms.gateway.com${clr}${yel}\n"
+        printf "no spaces, separated by commas if more than one email\n"
+        printf "[${cyn} $value1 ${yel}]:${clr}\n" value2
+        read -e -p "> " value2
+        assign_userdata "mms_recipients"
+    else
+        userdata[mms_recipients]=$value1
+    fi
+
+    # add subject header to mms
+    if [[ $add_mms = [Yy] ]]; then
+        value1=$(grep add_subject /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+        printf "${bld}${mag}\nWhen sending SMS/MMS messages through some\n"
+        printf "Mobile providers SMS/MMS gateways, the email formatted ${start_under}subject line${end_under}\n"
+        printf "can cause the SMS/MMS to fail or get dropped without even a rejection response??\n"
+        printf "Removing the subject line can avoid this issue.${clr}\n"
+        question="Do you want to add subject line to mms messages?"
+        test_yes_no add_subject
+    else
+        userdata[add_subject]=false
+    fi
+
+    new_section
+    printf "${bld}${blu}===> INTERVAL SECTION${clr}\n"
+    progress_done
+
+    # node timezone    
+    printf "${bld}${mag}What timezone are you currently located. Your server should be\n"
+    printf "${bld}${mag}set to ${wht}UTC${mag} (recommended) however, if you want your automation\n"
+    printf "${bld}${mag}program to run only at certain local times, and you want your logs\n"
+    printf "${bld}${mag}to match your local time, you can set the timezone here.${clr}\n"
+    printf "${cyn}This will not change your server's (node's) time, only the programs reporting.\n"
+    printf "${red}Note:${cyn}Time zones like ${wht}EST${cyn} may not follow daylight savings.${clr}\n\n"
+
+    question="Do you want a list of available time zones? "
+    test_yes_no continue_only n
+    if [[ ${userdata[continue_only]} = true ]]; then
+        done_searching=false
+        while [ $done_searching = false ]; do
+            printf "${cyn}Single word search only. ${mag}EG) ${wht}Los_Angeles\n"
+            read -e -p "${yel}Enter search term to filter or <enter> for full list: ${clr}" tz_search
+            if [[ -z $tz_search ]]; then
+                search_action="-a"
+            else
+                search_action="-s $tz_search"
+            fi
+            timezones=$(python3 $HOME/cn_automation/functions/search_timezones.py $search_action)
+            printf "$timezones\n"
+            question="Perform another search again? "
+            test_yes_no continue_only n
+            if [[ ${userdata[continue_only]} = false ]]; then
+                done_searching=true
+            fi
+        done
+    fi
+
+    echo
+    value1=$(grep time_zone /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    read -e -p "${yel}Enter the time zone for your automation program [${cyn} $value1 ${yel}]: ${clr}" value2
+    assign_userdata time_zone
+
+    printf "\n${bld}${mag}You may ${red}ONLY${mag} want health checks.\n"
+    printf "You can disable the automation program alerts here and it will\n"
+    printf "disable this feature, allowing only for health checks.\n${clr}"
+    value1=$(sed '/intervals/,/healthcheck/!d' /var/tmp/config.automation.tmp | grep "enabled" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    question="Do you want to enable alerts?" 
+    test_yes_no alerts_enabled
+    value1a=$(sed '/intervals/,/healthcheck/!d' /var/tmp/config.automation.tmp | grep "int_minutes" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    value1b=$(grep start_time /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1c=$(grep end_time /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    if [[ $value2 = [Yy] ]]; then
+        # interval minutes
+        echo
+        read -e -p "${yel}How often do you want to receive alerts in minutes? [${cyn} $value1a ${yel}]: ${clr}" value2
+        value1=$value1a
+        assign_userdata int_minutes
+
+        # start and stop alerts for the day
+        read -e -p "${yel}Do you want alerts 24/7 on an interval of ${start_under}$value${end_under} minutes? y or n [${cyn} n ${yel}]:${clr} " confirm
+        if [[ $confirm = [Yy] ]]; then
+            userdata[start_time]="'0:00'"
+            userdata[end_time]="'0:00'"
+        else
+            printf "${bld}${mag}Include the single quotes\n"
+            read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to start? [${cyn} $value1b ${yel}]: ${clr}" value2
+            value1=$value1b
+            assign_userdata start_time
+            
+            printf "${bld}${mag}Include the single quotes\n"
+            read -e -p "${clr}${yel}24 hour Format: What time do you want alerts to stop? [${cyn} $value1c ${yel}]: ${clr}" value2
+            value1=$value1c
+            assign_userdata end_time
+        fi
+    else
+        userdata[int_minutes]=$value1a
+        userdata[start_time]=$value1b
+        userdata[end_time]=$value1c
+    fi
+
+    new_section
+    printf "${bld}${blu}===> REPORT SECTION\n${clr}"
+    printf "${cyn}End of the day results of \$DAG value and speculation\n"
+    progress_done
+
+    # enable setup reports
+    value1=$(sed -n '/report/,$p' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
+    question="Do you want to enable end of day reports?"
+    test_yes_no report_enabled
+    value1=$(sed -n '/report/,$p' /var/tmp/config.automation.tmp | grep "-" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | sed -e 's/ /,/g')
+    if [[ $value2 = [Yy] ]]; then
+        printf "${bld}${mag}Enter in speculation estimates for end of day report\n"
+        printf "Based on the number of rewards received for the day\n"
+        printf "this will calculate the value daily, monthly, yearly.\n"
+        printf "It for fun only...\n\n"
+        printf "${clr}${cyn}Enter values in no spaces, separated by commas.\n"
+        printf "${wht}example)${cyn} .10,.50 > 10 cents speculation and 50 cents\n"
+        printf "${yel}[${cyn} $value1 ${yel}]\n"
+        read -e -p "> : ${clr}" value2
+        assign_userdata estimates
+    else
+        userdata[estimates]=$value1
+    fi
+
+    new_section
+    printf "${bld}${blu}===> HEALTHCHECK SECTION\n${clr}"
+    progress_done
+
+    # enable setup health checks
+    value1=$(sed '/healthcheck/,/splits/!d' /var/tmp/config.automation.tmp | grep "enabled" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    question="Do you want to enable HEALTH CHECKS?"
+    test_yes_no health_enabled
+
+    value1a=$(grep lb /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1b=$(grep lb_port /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1c=$(grep node_ip /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1d=$(grep node_port /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1e=$(sed '/healthcheck/,/splits/!d' /var/tmp/config.automation.tmp | grep "int_minutes" | tr -d '\n\r' | sed -e s/^[[:space:]]*-//g | awk '{print $2}')
+    value1f=$(grep alarm_once /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+
+    if [[ $value2 = [Yy] ]]; then
+        # lb and port
+        printf "${yel}Enter in the name of the constellation load balancer (FQDN)?\n[${cyn} $value1a ${yel}]:\n"
+        read -e -p "> ${clr}" value2
+        value1=$value1a
+        assign_userdata lb
+        printf "${yel}Enter in the port number the load balancer listens on; if you don't\nknow the default is probably right.\n"
+        read -e -p "Port number? [${cyn} $value1b ${yel}]: ${clr}" value2
+        value1=$value1b
+        assign_userdata lb_port
+
+        echo
+
+        # node_ip and port
+        printf "${yel}Enter in your external IP address:\n[${cyn} $value1c ${yel}]\n"
+        read -e -p "> ${clr}" value2
+        value1=$value1c
+        assign_userdata "node_ip"
+        printf "${yel}Enter in the port number your node listens on,\nif you don't know the default is probably right.\n"
+        read -e -p "Port number? [${cyn} $value1d ${yel}]: ${clr}" value2
+        value1=$value1d
+        assign_userdata node_port
+
+        # health setup
+        printf "\n${bld}${mag}You will only get alerted if something goes ${start_under}wrong${end_under}.\n"
+        printf "Then you will be alerted again when it comes back up.\n"
+        read -e -p "${clr}${yel}Do a health check every X minutes: How often? [${cyn} $value1e ${yel}]: ${clr}" value2
+        value1=$value1e
+        assign_userdata health_int_minutes
+
+        # alarm once
+        printf "\n${bld}${mag}If a network health check issue is identified, do you want to receive\n"
+        printf "the initial down message followed by an up message when the system recovers\n"
+        printf "or do you want to receive an alert every ${start_under}$value${end_under} minutes until it comes back up?${clr}\n"
+        question="Do you want only an initial down followed by up?"
+        value1=$value1f
+        test_yes_no alarm_once
+    else
+        userdata[lb]=$value1a
+        userdata[lb_port]=$value1b
+        userdata[node_ip]=$value1c
+        userdata[node_port]=$value1d
+        userdata[health_int_minutes]=$value1e
+        userdata[alarm_once]=$value1f
+    fi
+
+    new_section
+    printf "${bld}${blu}===> SPLITS SECTION\n"
+    printf "${mag}This will be useful once you are ready to take profit\n"
+    printf "${clr}${wht}Eg) ${cyn}If I want to calculate reinvestment verses taking\n"
+    printf "    profit of 70/30 (default is 70/30 .7 .3)\n${clr}"
+    progress_done
+
+    # enable reinvestment splits
+    value1=$(sed '/splits/,/collateral/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
+    question="Do you want to enable splits?"
+    test_yes_no splits_enabled
+    
+    value1a=$(grep split1 /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1b=$(grep split2 /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+
+    if [[ $value2 = [Yy] ]]; then
+        # enter in splits
+        read -e -p "${yel}Enter first float value: [${cyn} $value1a ${yel}]: ${clr}" value2
+        value1=$value1a
+        assign_userdata split1
+        
+        read -e -p "${yel}Enter second float value: [${cyn} $value1b ${yel}]: ${clr}" value2
+        value1=$value1b
+        assign_userdata split2
+    else
+        userdata[split1]=$value1a
+        userdata[split2]=$value1b
+    fi
+
+    new_section
+    printf "${bld}${blu}===> COLLATERAL SECTION\n${clr}"
+    printf "${mag}Calculate your rewards into nodes.\n"
+    printf "${mag}Reward to new node countdown.\n"
+    printf "${mag}Add into the alerts the value of your other nodes.\n"
+    progress_done  
+
+    # enable colateral
+    value1=$(sed '/collateral/,/constraints/!d' /var/tmp/config.automation.tmp | grep "enabled" | sed -e s/^[[:space:]]*-//g | tr -d '\n\r' | xargs | awk '{print $2}')
+    question="Do you want to enable collateral?"
+    test_yes_no col_enabled
+
+    value1a=$(grep node_count /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    value1b=$(grep free_dag /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    if [[ $value2 = [Yy] ]]; then
+        # node count
+        printf "${yel}\nHow many \$DAGs are you hodl divided by 250K to \"own\" ablity\n"
+        printf "${yel}to created a \"node\". This does not include this node's reward count.\n"
+        printf "The program will calculate the rewards on it's own.\n"
+        printf "${cyn}After your first alert comes in, you can review to make sure the math is correct.\n"
+        printf "If not, you can come back to this configuration, and adjust ${wht}'adminauto -c'${clr}\n"
+        printf "${yel}How many nodes do you \"own\" including "
+        read -e -p "this foundation node: [${cyn} $value1a ${yel}]: ${clr}" value2
+        value1=$value1a
+        assign_userdata "node_count"
+        # dag free count
+        printf "${bld}${mag}Do ${start_under}not${end_under} include commas, just decimals.\n"
+        read -e -p "${clr}${yel}Include any free \$DAG you own not associated with a node: [${cyn} $value1b ${yel}]: ${clr}" value2
+        value1=$value1b
+        assign_userdata "free_dag"
+    else
+        userdata[node_count]=$value1a
+        userdata[free_dag]=$value1b
+    fi
+
+    new_section
+    printf "${wht}Default settings are best for a standard node.\n"
+    printf "${bld}${blu}===> CONSTRAINTS SECTION\n${clr}"
+    printf "${cyn}Last Configuration Section...\n"
+    progress_done
+
+    # error constraint
+    value1=$(grep error_max /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    printf "${yel}How many errors do you want to accumulate before\n"
+    read -e -p "this program posts error status in the alerts? [${cyn} $value1 ${yel}]: ${clr}" value2
+    assign_userdata "error_max"
+
+    # memory
+    value1=$(grep memory_swap_min /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    read -e -p "${yel}How low can the swap memory and memory go before notification? [${cyn} $value1 ${yel}]: ${clr}" value2
+    assign_userdata "memory_swap_min"
+
+    # mointor access
+    value1=$(grep security_check /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    question="Do you want to monitor access attempts on your node?"
+    test_yes_no security_check
+
+    # days up
+    value1=$(grep uptime_threshold /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    read -e -p "${yel}How many days before you are warned about system uptime? [${cyn} $value1 ${yel}]: ${clr}" value2
+    assign_userdata "uptime_threshold"
+
+    # CPU load
+    value1=$(grep load_threshold /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    read -e -p "${yel}Keep watch of the CPU load on your node? [${cyn} $value1 ${yel}]: ${clr}" value2
+    assign_userdata "load_threshold"
+
+}
+
+
+function build_yaml_file_items()
+{
+    indent=$1
+    key=$2
+    type=$3
+
+
+    case $type in
+        enabled)
+            printf "%*s%s\n" $indent '' "enabled: ${userdata[$key]}" >> /var/tmp/new_config.yaml
+            ;;
+        header)
+            printf "%*s%s\n" $indent '' "$key: " >> /var/tmp/new_config.yaml
+            ;;
+        item) 
+            printf "%*s%s\n" $indent '' "$key: ${userdata[$key]}" >> /var/tmp/new_config.yaml
+            ;;
+        list) 
+            IFS="," read -ra each_email <<< "${userdata[$key]}"
+            for i in "${each_email[@]}"; do
+                printf "%*s%s\n" $indent '' "- $i" >> /var/tmp/new_config.yaml
+            done
+            ;;
+    esac
+}
+
+
+function build_yaml()
+{
+    printf "\n${yel}Preparing yaml template..."
+    cp $HOME/cn_automation/templates/template.yaml /var/tmp/new_config.yaml
+    printf "\r${yel}Preparing yaml template... ${grn}Complete${yel}\n"
+    printf "Building Template... \n"
+
+    build_yaml_file_items 0 configuration header
+    
+    build_yaml_file_items 2 notifications header
+    build_yaml_file_items 4 node_name item
+    build_yaml_file_items 4 node_username item
+    build_yaml_file_items 4 gmail_acct item
+    build_yaml_file_items 4 gmail_token item
+    build_yaml_file_items 4 email_recipients header
+    build_yaml_file_items 6 email_enabled enabled
+    build_yaml_file_items 6 list header
+    build_yaml_file_items 8 email_recipients list
+    build_yaml_file_items 4 mms_recipients header
+    build_yaml_file_items 6 mms_enabled enabled
+    build_yaml_file_items 6 add_subject item
+    build_yaml_file_items 6 list header
+    build_yaml_file_items 8 mms_recipients list 
+
+    build_yaml_file_items 2 intervals header
+    build_yaml_file_items 4 alerts_enabled enabled
+    build_yaml_file_items 4 time_zone item
+    build_yaml_file_items 4 start_time item
+    build_yaml_file_items 4 end_time item
+    build_yaml_file_items 4 int_minutes item
+
+    build_yaml_file_items 2 healthcheck header
+    build_yaml_file_items 4 health_enabled enabled
+    build_yaml_file_items 4 lb item
+    build_yaml_file_items 4 lb_port item
+    build_yaml_file_items 4 node_ip item
+    build_yaml_file_items 4 node_port item
+    build_yaml_file_items 4 int_minutes item
+    build_yaml_file_items 4 alarm_once item
+
+    build_yaml_file_items 2 splits header
+    build_yaml_file_items 4 splits_enabled enabled
+    build_yaml_file_items 4 split1 item
+    build_yaml_file_items 4 split2 item
+
+    build_yaml_file_items 2 collateral header
+    build_yaml_file_items 4 col_enabled enabled
+    build_yaml_file_items 4 node_count item
+    build_yaml_file_items 4 free_dag item
+
+    build_yaml_file_items 2 constraints header
+    build_yaml_file_items 4 error_max item
+    build_yaml_file_items 4 memory_swap_min item
+    build_yaml_file_items 4 security_check item
+    build_yaml_file_items 4 uptime_threshold item
+    build_yaml_file_items 4 load_threshold item
+
+    build_yaml_file_items 2 report header
+    build_yaml_file_items 4 report_enabled enabled
+    build_yaml_file_items 4 estimates header
+    build_yaml_file_items 6 estimates list
+
+    printf "\n${bld}${cyn}PLEASE REVIEW THE OUTPUT.\n"
+    printf "If you see any issues, you can re-run the configuration\n"
+    printf "${clr}( adminauto -c )\n${yel}"
+    read -e -p "Press <enter> to continue..." enterkey
+    clear
+    printf "\n${cyn}${bld}=======================================================${clr}\n"
+    printf "${yel}==> Preparing configuration snippet...\n\n${clr}"
+    cat /var/tmp/new_config.yaml | tail -n +15
+    printf "\n${clr}"
+
+    new_config=true
+    question="Does this configuration look correct?"
+    test_yes_no continue_only n
+    if [[ ${userdata[continue_only]} = false ]]; then
+        printf "${cyn}${bld}KEEPING EXISING CONFIG IN PLACE!\n"
+        printf "IF CONFIGS ARE MISSING OR INACCURATE DUE TO VERION MISMATCH\n"
+        printf "OR OTHER INCONSISTENCIES... PLEASE STAY DILIGENT, TO AVOID\n"
+        printf "UNNECESSARY TROUBLESHOOTING.\n"
+        printf "${red}WARNING:${mag} Program may not run as expected?\n\n${clr}"
+        read -e -p "Press <enter> to continue... " enterkey
+        new_config=false
+    fi
+}
+
+
+function clean_up_and_complete()
+{
+
+    new_section
+    printf "${bld}${blu}===> PREPARE PROGRAM FOR USE${clr}\n"
+    progress_done
+
+    if [[ $new_config = false ]]; then
+        if [[ $install_type = new ]]; then
+            printf "\n${yel}This was recognized as a new installation ${bld}BUT${clr}\n"
+            printf "${yel}You did not accept the new configuration created.\n"
+            printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild configuration.\n"
+        else
+            printf "${yel}You did not accept the new configuration created.\n"
+            printf "The original config will remain in place.\n"
+            printf "Please run the ${grn}${bld}adminauto -c${clr}${yel} to rebuild\nconfiguration if necessary.\n" 
+        fi
+    else
+        if [[ $config_verify_skipped = false ]]; then
+            printf "${bld}${grn}==> Placing new configuration in place...\n${clr}"
+            cp /var/tmp/new_config.yaml $HOME/cn_automation/configs/config.yaml
+        else
+            printf "${yel}Sending original unchanged config to new upgrade...${clr}"
+            if [[ -f /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml ]]; then
+                cp /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml $HOME/cn_automation/configs/config.yaml
+                printf "\r${yel}Sending original unchanged config to new upgrade... ${grn}success${clr}\n"
+            else
+                printf "\r${yel}Sending original unchanged config to new upgrade... ${red}failed${clr}\n"
+                printf "${red}Something went wrong${yel}, please rerun ${cyn}adminauto -c${clr} after installation is complete${clr}\n"
+            fi
+        fi
+    fi
+
+    if [[ $install_type = existing ]]; then
+        printf "${grn}==> Moving log files back in place...\n"
+        cp /var/tmp/automation_node_logs/* $HOME/cn_automation/logs/
+    fi
+
+    printf "${grn}==> Cleaning up remaining files...\n"
+
+    if [[ $new_config = true ]]; then
+        printf "${grn}==> Cleaning temporary log files...\n"
+        rm -rf /var/tmp/automation_node_logs/
+    fi
+    printf "${grn}==> Cleaning temporary config files...\n"
+    if [[ -f /var/tmp/config.automation.tmp ]]; then
+        rm -f /var/tmp/config.automation.tmp
+    fi
+    if [[ -f /var/tmp/new_config.yaml ]]; then
+        rm -f /var/tmp/new_config.yaml
+    fi
+    
+    
+    echo
+    read -e -p "${yel}We are ${bld}${grn}Ready${clr}${yel}... press <enter> to continue: " enterkey
+
+    if [[ $action = install ]]; then
+        configure_cron_tab
+    fi
+
+    new_section
+    printf "${bld}${blu}===> PREPARE CRON${clr}\n"
+    progress_done
+
+    new_section
+    printf "${bld}${blu}===> START THE SCRIPT${clr}\n"
+    progress_done
+
+    printf "${bld}${grn}INSTALLATION DONE!\n${clr}\n"
+    printf "${yel}Do you want to start the automation script now?\n"
+    printf "${cyn}You will be asked to ${wht}kill${cyn} any existing automation programs\n"
+    printf "${cyn}first then to ${wht}start${cyn} the automation program.\n"
+    question="Stop existing and start new? y or n "
+    test_yes_no continue_only n
+    if [[ ${userdata[continue_only]} = true ]]; then
+        printf "${grn}Stopping existing automation scripts...${clr}\n"
+        sleep 1
+        adminauto -k
+        printf "${grn}Starting upgraded automation scripts...${clr}\n"
+        sleep 1
+        adminauto -s
+    else
+        printf "${yel}Program not started, please run ${wht}'adminauto -s'${yel}\n"
+        printf "to start or restart the script.\n"
+        printf "If an old version of the script was running, it is still running...${clr}\n\n"
+    fi
+
+    read -e -p "${bld}${mag}Press <enter> to exit the installation program: " enterkey
+
+}
+
+
+function configure_cron_tab()
+{
+    new_section
+    printf "${bld}${blu}===> ENABLE CRON ${clr}\n"
+    progress_done
+
+    printf "${bld}${mag}If this node gets shutdown, rebooted, etc.\n"
+    printf "You can setup the program to start automatically by adding \n"
+    printf "it to the system cron (similar to Window's start-up folder).\n${clr}"
+
+    question="Do you want to add the automation program to the cron?"
+    test_yes_no continue_only n
+    if [[ ${userdata[continue_only]} = true ]]; then
+        printf "${yel}==> Reviewing system crontab...\n"
+        existing_cron_lines=$(crontab -l | grep "^[^#]" | grep automation.py | wc -l)
+        existing_cron_str=$(crontab -l | grep "^[^#]" | grep automation.py | awk '{ print $3 }')
+
+        case "$existing_cron_lines" in
+                0)
+                    # No entry found
+                    printf "${yel}No crontab entry was found, ready to install.${clr}\n"
+                    continue=yes
+                    ;;
+                1)
+                    # Existing Entry Found
+                    if [[ $install_type = new ]]; then
+                        printf "${bld}${mag}This seems like a new installation; however, we found an\n"
+                        printf "existing cron entry with a program of the same name as ours\n"
+                        printf "If this is because of some reasons because the program was\n"
+                        printf "uninstalled and reinstalled, you can safely ignore.  Otherwise,\n"
+                        printf "continue with caution.${clr}\n"
+                    elif [[ $install_type = existing ]]; then
+                        printf "${bld}${mag}We found an existing entry already.  We are going to replace it\n"
+                        printf "this should not be a problem because this is an upgrade${clr}\n"
+                    fi
+                    ;;                        
+                *)
+                    # More than one entry found
+                    printf "${bld}${mag}Something was inconsistent in the crontab.\n"
+                    printf "Multiple lines have been found for the automation program.\n"
+                    printf "This could indicate that you have configured this in the past\n"
+                    printf "or you have another program with the same name.\n"
+                    printf "If you are the only one that runs this node, you can safely\n"
+                    printf "fix this yourself.  However, if you are not technically saavy, please\n"
+                    printf "work with someone that can help you and skip this part.\n"
+                    printf "${red}WARNING:${mag} If you continue the cron install, all other lines\n"
+                    printf "will be removed, and only the single entry for this program will remain.\n"
+                    printf "Issue a ${clr}'crontab -l'${bld}${mag} at the command prompt to review what is\n"
+                    printf "present, then re-run this setup script.${clr}\n"
+                    ;;
+        esac
+        if [[ $existing_cron_lines != 0 ]]; then
+            question="Do you want to add the cron job anyway?"
+            test_yes_no continue_only n
+            if [[ ${userdata[continue_only]} = true ]]; then
+                continue=yes
+            fi
+        fi
+        if [[ $continue = "yes" ]]; then
+            # @reboot /usr/bin/python3 /root/cn_automation/automation.py auto >> ~/cron.log 2>&1
+            if [[ ! -z $existing_cron_str ]]; then
+                crontab -u ${userdata[node_username]} -l | grep -v $existing_cron_str | crontab -u root -
+            fi
+            (crontab -u ${userdata[node_username]} -l ; echo "@reboot /usr/bin/python3 /root/cn_automation/automation.py auto >> ~/cron.log 2>&1") | crontab -u ${userdata[node_username]} -
+        fi
+
+        printf "${bld}${grn}Cron configuration section completed\n${clr}${yel}"
+        read -e -p "Press <enter> key to continue: " enterkey
+        
+    fi
+
+    # verify that cron was done successfully
+    existing_cron_lines=$(crontab -l | grep "^[^#]" | grep automation.py | wc -l)
+    if [[ $existing_cron_lines = 1 ]]; then
+        printf "${grn}Crontab verified successfully... \n${clr}"
+    elif [[ $existing_cron_lines = 0 ]]; then 
+        printf "${yel}Crontab did not update, your script may not start\n"
+        printf "automatically on startup. Enter ${clr}'crontab -l'${yel}\n"
+        printf "at the command prompt to review?\n${clr}"
+    else
+        printf "${yel}Crontab has multiple entries similar to your\n"
+        printf "automation script. Enter ${clr}'crontab -l'${yel}\n"
+        printf "at the command prompt to review?\n${clr}" 
+    fi      
+
+}
+
+
+function check_version_for_upgrade()
+{
+    printf "\n${yel}Checking automation script and program versioning... (${red}please wait${yel}) "
+    prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/v1.3_feature_install_package/adminauto | grep "AUTOMATION_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
+    printf "\r${yel}Checking automation program and autoadmin script versioning... ${grn}complete!                   "
+    printf "\nLatest Version: ${cyn}${bld}$prod_version${clr}  ${grn}Current Version: ${cyn}${bld}$AUTOMATION_VERSION${clr}\n\n"
+    skip_version_continue=false
+
+    if [[ $prod_version > $AUTOMATION_VERSION ]]; then
+            printf "${red}New version available! ${clr}(${cyn}${bld}v$prod_version${clr})${grn}\n"
+            printf "${bld}${yel}THIS WILL UPGRADE YOUR AUTOADMIN SCRIPT AND YOU WILL\nNEED TO RESTART ${start_under}ADMINAUTO${end_under} BEFORE IT CAN BE USED!${clr}\n"
+            printf "${wht}(This is separate from the automation program)\n${clr}"
+            question="Would you like to upgrade the autoadmin script?"
+            test_yes_no continue_only n
+            if [[ ${userdata[continue_only]} = true ]]; then
+                printf "${grn}==> Updating... (${red}please wait${grn}) "
+                #wget https://github.com/netmet1/constellation-node-automation/blob/$branch_name/adminauto -O /usr/local/bin/adminauto >/dev/null 2>&1
+                curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/adminauto > /usr/local/bin/adminauto
+                printf "\r${grn}autoadmin ${cyn}utility script updated successfully${clr}\n"
+                printf "\n${red}${bld}Press any key to review help file, you will have to execute\n"
+                read -e -p "the ${grn}adminauto${red} command again: ${clr}"
+                adminauto -h
+                exit 1
+            else
+                echo
+                if [[ $action = "install" || $action = "upgrade" ]]; then
+                    printf "${red}${bld}${start_under}WARNING${clr}\n${cyn}If you continue with this installation.\n"
+                    printf "Version ${start_under}${AUTOMATION_VERSION}${end_under} will be installed, latest version is ${start_under}${prod_version}${clr}\n"
+                else
+                    printf "${red}${bld}${start_under}WARNING${clr}\n${cyn}If you continue with this version of ADMINAUTO ${start_under}${wht}${AUTOMATION_VERSION}${end_under}${yel}.\n"
+                    printf "Unexpected results are more likely than not to occur! \n${bld}HIGHLY RECOMMENDED TO UPGRADE${clr}\n(Press \"n\" and restart adminauto to upgrade)\n"
+                fi
+            fi
+    else
+        skip_version_continue=true
+    fi
+}
+
+
+function print_help_menu()
+{
+    echo
+    printf "${grn}${start_under}Node Operator Automation Helper Script${end_under}\n"
+    printf "${wht}${b_mag}Version: ${bld}${AUTOMATION_VERSION}${clr}\n\n"
+    printf "${yel}${bld}usage: adminauto [-h] [-i] [-c] [-s] [-r] [-k] [-v] [-cr]${clr}\n\n"
+    printf "${grn}${bld}THIS IS FOR USE WITH THE \"AUTO\" ARGUMENT (auto run)${clr}\n"
+    printf "${grn}This does not deal with single alerts, reports, or logs\n\n"
+    printf "This does not deal with the program running locally in the current user session"
+    printf "without the \"nohup\" command.  See README.md\n\n"
+    printf "${bld}${start_under}Positional arguments${end_under}:${clr}\n"
+    printf "${bld}${yel} -h${clr}${wht}        show this help message\n\n"
+    printf "${bld}${yel} -v${clr}${wht}        show program's current version\n\n"
+    printf "${bld}${yel} -i${clr}${wht}        first time installation or upgrade existing version\n"
+    printf "                                   (script will auto-detect).\n"
+    printf "${bld}${yel} -cr${clr}${wht}       setup cron only.\n"
+    # printf "${bld}${yel} -u${clr}${wht}        upgrade automation script.  If an installation is not detected, you\n"
+    # printf "           receive a warning\n"
+    printf "${bld}${yel} -c${clr}${wht}        guided help to update the configuration ${start_under}only${end_under}.\n\n"
+    printf "${bld}${yel} -a${clr}${wht}        send alert to mms/sms/email ${cyn}(unless -p is used)${clr}.\n"
+    printf "${bld}${yel} -l${clr}${wht}        send health check to mms/sms/email ${cyn}(unless -p is used)${clr}.\n"
+    printf "${bld}${yel} -e${clr}${wht}        send end of day report to mms/sms/email ${cyn}(unless -p is used)${clr}.\n\n"
+    printf "${bld}${yel} -p${clr}${wht}        print to console and override alert, report, or health check from.\n"
+    printf "                                   being sent to sms/mms/email.\n\n"
+    printf " =========================== \n\n"
+    printf "${bld}${yel} -s${clr}${wht}        start the automation program if not running\n"
+    printf "           this will start the program in the background\n"
+    printf "           ${red}WARNING:${wht} beware of starting multiple instances of the program\n"
+    printf "           this can cause you to get duplicate alerts at the same moment\n"
+    printf "           in time.\n"
+    printf "${bld}${yel} -r${clr}${wht}        stop the program, then restart it\n"
+    printf "${bld}${yel} -k${clr}${wht}        stop the program from running in the background\n"
+    printf "            this will find and kill the automation program process\n\n"
+    printf "${grn}${start_under}example usage${end_under}:\n"
+    printf "${yel}~# adminauto -s\n"
+    printf "${cyn}This command will start the node operator automation program in the background with the \"auto\" variable.\n\n"
+    printf "${yel}~#: adminauto -r\n"
+    printf "${cyn}This command will find the process that is running and \"kill\" it (stop it).\n"
+    printf "then it will restart it with the auto command in the background (-s).\n\n${clr}"
+    dag_statement
+    exit 0
+}
+
+
+case "$1" in
+    -i) action="install";;
+    -u) action="upgrade";;
+    -a) action="alert" 
+        if [[ $2 = "-p" ]]; then
+            action="alert_console"
+        fi
+        ;;
+    -l) action="health"
+        if [[ $2 = "-p" ]]; then
+            action="health_console"
+        fi
+        ;;
+    -e) action="report"
+        if [[ $2 = "-p" ]]; then
+            action="report_console"
+        fi
+        ;;
+    -p) case "$2" in
+            -a)
+            action="alert_console"
+            ;;
+            -l)
+            action="health_console"
+            ;;
+            -e)
+            action "report_console"
+            ;;
+        esac
+        ;;
+    -ci) action="cron";;
+    -c) action="configure"
+        # remove cron step
+        config_steps=`expr $config_steps - 1`
+        ;;
+    -s) action="start";;
+    -r) action="restart";;
+    -k) action="kill";;
+    -h) action="help"
+        print_help_menu
+        ;;
+    -v) action="version"
+        print_banner 1
+        
+        printf "${wht}${b_mag}ADMINAUTO VERSION: ${bld}${yel}${AUTOMATION_VERSION}${clr}\n"
+        dag_statement
+        exit 0
+        ;;
+    *) action="none"
+        print_help_menu
+        dag_statement
+        exit 0
+        ;;
+esac
+
+print_banner 1
+disclaimer
+
+question="Run ${cyn}adminauto${yel} with the selected ${mag}${bld}${action^^}${clr}${yel} option?"
+test_yes_no continue_only y
+if [[ ${userdata[continue_only]} == true ]]; then
+    auto_process="pgrep -f \"python3.*automation.py.*auto\""
+    start_command="nohup python3 $HOME/cn_automation/automation.py auto"
+    invalid_error="Invalid request received\nno action taken...\n"
+    already_error="The Automation Program Doesn't seem to be running already.\nNo Actions Needed...\n\n"
+
+    print_banner 1
+    process=$(eval "$auto_process")
+    case "$action" in
+        start) 
+            if [[ -z $process ]]; then
+                echo "==> starting..."
+                $start_command &
+                process=$(eval "$auto_process")
+                sleep 2
+                printf "New Automation Program Process: $process has been started.\nAction: Successful\n\n"
+            else
+                printf "Automation Program Process: $process is already running.  see --help\n\n"
+            fi
+            ;;
+
+        restart) 
+            if [[ -z $process ]]; then
+                printf "$already_error"
+            else
+                echo "==> Removing the Automation Process: $process"
+                pkill -f 'python3.*automation.py.*auto' > /dev/null 2>&1
+                $start_command & > /dev/null 2>&1
+                process=$(eval "$auto_process")
+                sleep 2
+                printf "New Automation Program Process: $process has been started.\nAction: Successful\n\n" 
+            fi       
+            ;;
+
+        kill) 
+            if [[ -z $process ]]; then
+                printf "$already_error"
+            else
+                echo "==> Removing the Automation Process: $process"
+                pkill -f 'python3.*automation.py.*auto'
+                sleep 2
+                echo "Automation Program Process: $process has been stopped/removed/killed.\nAction: Successful\n\n"
+            fi
+            ;;
+
+        install) 
+            special_case_beta_upgrade # check if user is attempting to upgrade from beta version
+                                      # this would mean that they manually installed the program
+                                      # also works for manual installations that might be trying
+                                      # to convert to adminauto
+            check_version_for_upgrade
+            if [[ $skip_version_continue = false ]]; then
+                question="Continue?"
+                test_yes_no continue_only n
+            else
+                userdata[continue_only]=true
+            fi
+            if [[ ${userdata[continue_only]} = true ]]; then
+                if [[ -f $HOME/cn_automation/configs/config.yaml ]]; then
+                    prepare_existing_installation
+                else
+                    prepare_new_installation
+                fi
+                perform_installation
+                clean_up_and_complete
+            fi
+            ;;
+        
+        configure)
+            check_version_for_upgrade
+            if [[ -f $HOME/cn_automation/configs/config.yaml ]]; then
+                cp $HOME/cn_automation/configs/config.yaml /var/tmp/config.automation.tmp
+            else
+                cp $HOME/cn_automation/configs/config.example.yaml /var/tmp/config.automation.tmp
+            fi
+            perform_configuration
+            build_yaml
+            clean_up_and_complete
+            ;;
+
+        cron)
+            check_version_for_upgrade
+            config_steps=1
+            configure_cron_tab
+            ;;
+
+        alert)
+            python3 $HOME/cn_automation/automation alert
+            ;;
+
+        alert_consolde)
+            python3 $HOME/cn_automation/automation alert -p
+            ;;
+
+        report)
+            python3 $HOME/cn_automation/automation report
+            ;;
+
+        report_console)
+            python3 $HOME/cn_automation/automation report -p
+            ;;
+
+        health)
+            python3 $HOME/cn_automation/automation health
+            ;;
+
+        health_consolde)
+            python3 $HOME/cn_automation/automation health -p
+            ;;
+
+        *) printf "$invalid_error"
+            dag_statement
+            exit 0
+            ;;
+    esac
+else
+    printf "$invalid_error"
+    echo
+fi
+
+cd $HOME
+print_banner 1
+printf "\n${bld}${grn}${action^^} DONE!\n${clr}\n"
+printf "${bld}${mag}Hope you enjoy the automation alerting program!\n"
+dag_statement
+echo 
