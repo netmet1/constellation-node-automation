@@ -388,15 +388,15 @@ function perform_installation()
     
     printf "${bld}${yel}Starting Installation...\n${clr}"
     printf "${yel}==> Downloading new source code... (${cyn}Please Wait${yel}) "
-    wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}b.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}b.tar.gz >/dev/nul 2>&1
+    wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}.tar.gz >/dev/nul 2>&1
     printf "\r==> Downloading new source code... ${grn}Done!${yel}                  \n"
     printf "==> Installing... (${red}Please Wait"
-    tar xf /var/tmp/v${AUTOMATION_VERSION}b.tar.gz -C $HOME/
+    tar xf /var/tmp/v${AUTOMATION_VERSION}.tar.gz -C $HOME/
     printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
 
     printf "==> Cleaning up..."
-    rm /var/tmp/v${AUTOMATION_VERSION}b.tar.gz
-    mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}b/ $HOME/cn_automation
+    rm /var/tmp/v${AUTOMATION_VERSION}.tar.gz
+    mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}/ $HOME/cn_automation
     printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
 
     if [[ $install_type = new ]]; then
