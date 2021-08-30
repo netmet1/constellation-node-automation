@@ -66,8 +66,9 @@ In order to properly display the text messages, it is highly recommended to use 
     cd ~
     ```
     ```
-    curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/main/adminauto > /usr/local/bin/adminauto
+    wget https://github.com/netmet1/constellation-node-automation/releases/download/v2.0/adminauto -O /usr/local/bin/
     ```
+
 1. Issue the following command and follow the prompts
     ```
     adminauto -i
