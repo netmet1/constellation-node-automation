@@ -290,7 +290,9 @@ function prepare_new_installation()
 
     printf "\n${grn}We could ${start_under}not${end_under} find your ${bld}${yel}config.yaml${clr}${grn} file.\n"
     printf "This appears to be a ${bld}${start_under}new${end_under}${clr}${grn} installation\n\n${clr}"
-    printf "${red}${bld}WARNING${clr}${yel} Any existing configs and logs will be removed!\n\n"
+    printf "${red}${bld}WARNING${clr}${yel} Any existing configs and logs will be removed!\n"
+    printf "${red}Do not terminate the configuration process until it completes\n"
+    printf "to avoid unexpected results\n\n"
     question="Continue with ${start_under}${grn}new${end_under}${yel} installation?"
     test_yes_no continue_only n
     continue_only_exit_check
@@ -369,6 +371,11 @@ function special_case_beta_upgrade()
             printf "${yel}If you believe their is a beta release on this system, please backup\n"
             printf "your configs and logs manually before continuing...\n"
         fi
+    else
+        printf "\n${yel}A previous version of the node automation program ${wht}>2.0 ${yel}has\n"
+        printf "been found. If any ${start_under}beta versions${end_under} or ${start_under}manual installations${end_under} were\n"
+        printf "done in the past, they will most likely remain on your system.\n"
+        printf "${mag}Recommended${yel}: Manual clean up may be required.\n\n"
     fi
 }
 
@@ -378,7 +385,7 @@ function perform_installation()
     print_banner 1
     
     printf "${yel}==> Cleaning up previous version (moving to /var/tmp/)\n"
-    if [[ -f /var/tmp/cn_automation${AUTOMATION_VERSION} ]]; then
+    if [[ -d /var/tmp/cn_automation${AUTOMATION_VERSION} ]]; then
         rm -rf /var/tmp/cn_automation${AUTOMATION_VERSION}
     fi
     
@@ -396,7 +403,7 @@ function perform_installation()
 
     printf "==> Cleaning up..."
     rm /var/tmp/v${AUTOMATION_VERSION}.tar.gz
-    mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION}/ $HOME/cn_automation
+    mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION} $HOME/cn_automation
     printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
 
     if [[ $install_type = new ]]; then
@@ -419,6 +426,7 @@ function perform_installation()
         printf "https://github.com/netmet1/constellation-node-automation/blob/main/README.md\n\n"
         if [[ $install_type = new ]]; then
             printf "${bld}${mag}We now have to configure your automation alerting program instance.${clr}\n"
+            printf "${bld}${red}Do not terminate this process early, otherwise you will not have a config\nfile created${clr}\n"
             read -e -p "${yel}Press <enter> key to start configuration: " enterkey
         else
             read -e -p "${yel}Press <enter> key to review your configuration file: " enterkey
@@ -524,7 +532,7 @@ function perform_configuration()
     value1=$(grep gmail_acct /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
     printf "\n${yel}Enter in the gmail account you setup in order to send MMS/Emails through\n"
     printf "See the INSTALL.md Setup Gmail section for details\n"
-    read -e -p "Gmail account email address? [${cyn} $value1 ${yel}]: " value2
+    read -e -p "Gmail account email address? [${cyn} $value1 ${yel}]: ${clr}" value2
     assign_userdata gmail_acct
 
     # gmail token
@@ -680,7 +688,7 @@ function perform_configuration()
         printf "this will calculate the value daily, monthly, yearly.\n"
         printf "It for fun only...\n\n"
         printf "${clr}${cyn}Enter values in no spaces, separated by commas.\n"
-        printf "${wht}example)${cyn} .10,.50 > 10 cents speculation and 50 cents\n"
+        printf "${wht}example)${cyn} .10,.50 ${bld}${mag}==> 10 cents speculation and 50 cents\n${clr}"
         printf "${yel}[${cyn} $value1 ${yel}]\n"
         read -e -p "> : ${clr}" value2
         assign_userdata estimates
@@ -706,6 +714,7 @@ function perform_configuration()
 
     if [[ $value2 = [Yy] ]]; then
         # lb and port
+        printf "${mag}lb.constellationnetwork.io\n"
         printf "${yel}Enter in the name of the constellation load balancer (FQDN)?\n[${cyn} $value1a ${yel}]:\n"
         read -e -p "> ${clr}" value2
         value1=$value1a
@@ -718,6 +727,9 @@ function perform_configuration()
         echo
 
         # node_ip and port
+        printf "${yel}==> Looking up your external IP ... (${mag}please wait${clr}${yel}) "
+        host_ip=$(curl -s https://ipv4.icanhazip.com/)
+        printf "\r${yel}==> Looking up your external IP ... ${mag}$host_ip${clr}           \n"
         printf "${yel}Enter in your external IP address:\n[${cyn} $value1c ${yel}]\n"
         read -e -p "> ${clr}" value2
         value1=$value1c
@@ -738,7 +750,7 @@ function perform_configuration()
         printf "\n${bld}${mag}If a network health check issue is identified, do you want to receive\n"
         printf "the initial down message followed by an up message when the system recovers\n"
         printf "or do you want to receive an alert every ${start_under}$value${end_under} minutes until it comes back up?${clr}\n"
-        question="Do you want only an initial down followed by up?"
+        question="Do you want ${start_under}only${end_under} an initial down followed by up?"
         value1=$value1f
         test_yes_no alarm_once
     else
@@ -800,6 +812,7 @@ function perform_configuration()
         printf "The program will calculate the rewards on it's own.\n"
         printf "${cyn}After your first alert comes in, you can review to make sure the math is correct.\n"
         printf "If not, you can come back to this configuration, and adjust ${wht}'adminauto -c'${clr}\n"
+        printf "${cyn}Ex) You have a node up, and you also have 260,000 \$DAG in your bag.\nYou would place a ${wht}2${cyn} here, and have 10K free dags left.\n"
         printf "${yel}How many nodes do you \"own\" including "
         read -e -p "this foundation node: [${cyn} $value1a ${yel}]: ${clr}" value2
         value1=$value1a
@@ -843,6 +856,7 @@ function perform_configuration()
 
     # CPU load
     value1=$(grep load_threshold /var/tmp/config.automation.tmp | tr -d '\n\r' | awk '{print $2}')
+    printf "${yel}70 percent represented as .7\n"
     read -e -p "${yel}Keep watch of the CPU load on your node? [${cyn} $value1 ${yel}]: ${clr}" value2
     assign_userdata "load_threshold"
 
@@ -956,6 +970,16 @@ function build_yaml()
         printf "IF CONFIGS ARE MISSING OR INACCURATE DUE TO VERION MISMATCH\n"
         printf "OR OTHER INCONSISTENCIES... PLEASE STAY DILIGENT, TO AVOID\n"
         printf "UNNECESSARY TROUBLESHOOTING.\n"
+        if [[ $install_type = new ]]; then
+            printf "${red}SINCE THIS IS A ${wht}NEW${red} INSTALLATION THERE WILL NOT BE\n"
+            printf "A CONFIG.YAML FILE TO USE, YOU SHOULD RE-RUN\n"
+            printf "${wht}adminauto -c${red} TO CORRECT.\n\n"
+        else
+            if [[ ! -f $HOME/cn_automation/configs/config.yaml ]]; then
+                printf "${yel}"
+                cp /var/tmp/config.automation.tmp $HOME/cn_automation/configs/config.yaml
+            fi
+        fi
         printf "${red}WARNING:${mag} Program may not run as expected?\n\n${clr}"
         read -e -p "Press <enter> to continue... " enterkey
         new_config=false
@@ -1408,7 +1432,10 @@ fi
 
 cd $HOME
 print_banner 1
-printf "\n${bld}${grn}${action^^} DONE!\n${clr}\n"
-printf "${bld}${mag}Hope you enjoy the automation alerting program!\n"
+printf "\n${bld}${grn}${action^^} DONE!\n${clr}"
+if [[ $action = "install" ]]; then
+    printf "${cyn}${bld}Backups of previous installations are located in ${wht}/var/tmp${clr}\n"
+fi
+printf "\n${bld}${mag}Hope you enjoy the automation alerting program!\n"
 dag_statement
 echo 
