@@ -106,7 +106,7 @@ A Python automation and status program to run on your node.  It will send you al
 
 | command | Parameters | Optional |
 | ------- | :-------: | :------- | 
-| `python3 automation.py` | `alert` `report` `auto` `health` `silent` | `-p`, `&` |
+| `python3 automation.py` | `alert` `report` `auto` `health` `silent` | `-p`, `v`, `&` |
 
 > `&` will run the system in the background until `ctl-c` performed.
 
@@ -125,20 +125,20 @@ A Python automation and status program to run on your node.  It will send you al
 #### Help Usage
 
 ```
-usage: automation.py [-h] [-p] [-c EMAIL] [-ss START_DATE] [-se END_DATE]
+usage: automation.py [-h] [-p] [-c EMAIL] [-ss START_DATE] [-se END_DATE] [-v]
                      ACTION
 
 dag alerting script
 
 positional arguments:
   ACTION                Type of action the script will run: (auto, alert,
-                        report, health, silent, or log). Search dates (currently) only
-                        work with the "log" action.
+                        report, health, silent or log). Search dates
+                        (currently) only work with the "log" action.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -p, --print           print to the console instead of mms/sms/email, does not work
-                        with 'auto'.
+  -p, --print           print to the console instead of mms/sms/email, does
+                        not work with 'auto'.
   -c EMAIL, --csv EMAIL
                         For use with the 'log' action only. Program will send
                         a csv formatted file with search results to the
@@ -152,6 +152,7 @@ optional arguments:
   -se END_DATE, --search_end END_DATE
                         For use with 'log' action. The end date to search log
                         files. Format: YYYY-MM-DD
+  -v, --version         show program's version number and exit
 ```
 
 #### Start the program to run on a schedule via the [configuration](#config) parameters (start/stop/interval) <a name="schedule_alert">

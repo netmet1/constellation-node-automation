@@ -868,7 +868,6 @@ function build_yaml_file_items()
     key=$2
     type=$3
 
-
     case $type in
         enabled)
             printf "%*s%s\n" $indent '' "enabled: ${userdata[$key]}" >> /var/tmp/new_config.yaml
@@ -1168,10 +1167,10 @@ function configure_cron_tab()
 
 function check_version_for_upgrade()
 {
-    printf "\n${yel}Checking automation script and program versioning... (${red}please wait${yel}) "
+    printf "\n${yel}Checking adminauto versioning against the repository... (${red}please wait${yel}) "
     prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/adminauto | grep "AUTOMATION_SCRIPT_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
-    printf "\r${yel}Checking automation program and autoadmin script versioning... ${grn}complete!                   "
-    printf "\nLatest Version: ${cyn}${bld}$prod_version${clr}  ${grn}Current Version: ${cyn}${bld}$AUTOMATION_SCRIPT_VERSION${clr}\n\n"
+    printf "\r${yel}Checking script versioning against the repository version... ${grn}complete!                      \n"
+    printf "Repository Version: ${cyn}${bld}$prod_version${clr}  ${grn}Node's Version: ${cyn}${bld}$AUTOMATION_SCRIPT_VERSION${clr}\n\n"
     skip_version_continue=false
 
     if [[ $prod_version > $AUTOMATION_SCRIPT_VERSION ]]; then
@@ -1205,12 +1204,13 @@ function check_version_for_upgrade()
 
     if [[ -d $HOME/cn_automation ]]; then
         
-        printf "${yel}==> Looking up installed version... "
-        current_program_version=$(python3 $HOME/cn_automation/auotmation.py | awk '{print $3}')
-        printf "\r${yel}==> Looking up script version... ${grn}complete${clr}\n"
+        printf "${yel}==> Looking up automation program version... "
+        current_program_version=$(python3 $HOME/cn_automation/automation.py --version | awk '{print $3}')
+        printf "\r${yel}==> Looking up automation program version... ${grn}complete${clr}\n"
         printf "${yel}==> Looking up current release version... "
         AUTOMATION_PROG_VERSION=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/automation.py | grep "Version" | head -1 | awk '{print $3}' &)
-        printf "\r${yel}==> Looking up current release version... ${grn}complete${clr}\n"
+        printf "\r${yel}==> Looking up current release version... ${grn}complete                      \n"
+        printf "Repository Version: ${cyn}${bld}$AUTOMATION_PROG_VERSION${clr}  ${grn}Node's Version: ${cyn}${bld}$current_program_version${clr}\n\n"
 
         skip_version_prog_continue=true
         if [[ $current_program_version = $AUTOMATION_PROG_VERSION ]]; then
@@ -1218,14 +1218,14 @@ function check_version_for_upgrade()
             printf "${bld}${yel}PROGRAM IS ALREADY AT CURRENT VERSION!${clr}\n"
             question="Do you want to install the ${start_under}same version${end_under} $current_program_version over itself?"
             test_yes_no continue_only n
-        elif [[ $current_program_version < $AUTOMATION_PROG_VERSION ]]; then
+        elif [[ $current_program_version > $AUTOMATION_PROG_VERSION ]]; then
             skip_version_prog_continue=false
-            printf "${bld}${yel}PROGRAM IS A ${red}PREVIOUS${yel} VERSION THEN CURRENT VERSION!${clr}\n"
+            printf "${bld}${yel}CURRENT RELEASE IS A ${red}PREVIOUS${yel} VERSION THEN CURRENT VERSION ??${clr}\n"
             question="Do you want to install the ${start_under}an older version${end_under} $current_program_version over the current?"
             test_yes_no continue_only n
         fi
         if [[ $skip_version_prog_continue = false ]]; then
-            if [[ ${userdata[continue_only]} = true ]]; then
+            if [[ ${userdata[continue_only]} = false ]]; then
                 dag_statement
                 exit 0
             fi
