@@ -1,10 +1,10 @@
 #!/bin/bash
-# ====================================
+# ======================================
 # 
-#  DAG Automation Administration Script
+#  DAG Automation Administration script
 #  for installing, upgrading, starting,
 #  stopping, and restarting the 
-#  constellation node automation script
+#  constellation node automation program
 #  
 #  last update:  2021-08
 #  author:  hgtp://netmet
@@ -15,7 +15,7 @@
 #  this is just a script to help the 
 #  community.
 #
-# ==================================== 
+# ===================================== 
 
 blk=$(tput setaf 0)
 red=$(tput setaf 1)
