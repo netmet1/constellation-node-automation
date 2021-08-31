@@ -1,9 +1,25 @@
+# ======================================
+# 
+#  Constellation Node Automation Program
+#  
+#  last update:  2021-08
+#  author:  hgtp://netmet
+#
+#  DISCLAIMER:  I do not work for 
+#  Constellation Network however I am
+#  a proud member of the community and
+#  this is just a script to help the 
+#  community.
+#
+#  Version 2.0
+# ===================================== 
+
 import argparse
 from classes.core import Core
 from classes.config_obj import Config
 from classes.logs import Logger
 
-def retrieve_arguments():
+def retrieve_arguments(version="2.0"):
     dag_parser = argparse.ArgumentParser(description="dag alerting script")
 
     dag_parser.add_argument('Action',
@@ -30,6 +46,7 @@ def retrieve_arguments():
                             metavar="END_DATE",
                             default=False,
                             type=str)    
+    dag_parser.add_argument('-v','--version', action='version', version=f'%(prog)s version: {version}')  
 
     return dag_parser.parse_args()
 
