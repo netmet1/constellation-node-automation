@@ -45,8 +45,7 @@ beta_version_found=false
 branch_name="main" # dev vs. prod
 declare -A userdata
 
-AUTOMATION_VERSION="2.0"
-
+AUTOMATION_SCRIPT_VERSION="2.0"
 
 function dag_statement()
 {
@@ -385,25 +384,25 @@ function perform_installation()
     print_banner 1
     
     printf "${yel}==> Cleaning up previous version (moving to /var/tmp/)\n"
-    if [[ -d /var/tmp/cn_automation${AUTOMATION_VERSION} ]]; then
-        rm -rf /var/tmp/cn_automation${AUTOMATION_VERSION}
+    if [[ -d /var/tmp/cn_automation${AUTOMATION_SCRIPT_VERSION} ]]; then
+        rm -rf /var/tmp/cn_automation${AUTOMATION_SCRIPT_VERSION}
     fi
     
     if [[ -d $HOME/cn_automation/ ]]; then
-        mv -f $HOME/cn_automation/ /var/tmp/cn_automation${AUTOMATION_VERSION}
+        mv -f $HOME/cn_automation/ /var/tmp/cn_automation${AUTOMATION_SCRIPT_VERSION}
     fi
     
     printf "${bld}${yel}Starting Installation...\n${clr}"
     printf "${yel}==> Downloading new source code... (${cyn}Please Wait${yel}) "
-    wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_VERSION}.tar.gz -O /var/tmp/v${AUTOMATION_VERSION}.tar.gz >/dev/nul 2>&1
+    wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v${AUTOMATION_SCRIPT_VERSION}.tar.gz -O /var/tmp/v${AUTOMATION_SCRIPT_VERSION}.tar.gz >/dev/nul 2>&1
     printf "\r==> Downloading new source code... ${grn}Done!${yel}                  \n"
     printf "==> Installing... (${red}Please Wait"
-    tar xf /var/tmp/v${AUTOMATION_VERSION}.tar.gz -C $HOME/
+    tar xf /var/tmp/v${AUTOMATION_SCRIPT_VERSION}.tar.gz -C $HOME/
     printf "\r${yel}==> Installing... ${grn}Done!${yel}                    \n"
 
     printf "==> Cleaning up..."
-    rm /var/tmp/v${AUTOMATION_VERSION}.tar.gz
-    mv -f $HOME/constellation-node-automation-${AUTOMATION_VERSION} $HOME/cn_automation
+    rm /var/tmp/v${AUTOMATION_SCRIPT_VERSION}.tar.gz
+    mv -f $HOME/constellation-node-automation-${AUTOMATION_SCRIPT_VERSION} $HOME/cn_automation
     printf "\r==> Cleaning up... ${grn}Done!${yel}\n"
 
     if [[ $install_type = new ]]; then
@@ -1010,8 +1009,8 @@ function clean_up_and_complete()
             cp /var/tmp/new_config.yaml $HOME/cn_automation/configs/config.yaml
         else
             printf "${yel}Sending original unchanged config to new upgrade...${clr}"
-            if [[ -f /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml ]]; then
-                cp /var/tmp/cn_automation${AUTOMATION_VERSION}/configs/config.yaml $HOME/cn_automation/configs/config.yaml
+            if [[ -f /var/tmp/cn_automation${AUTOMATION_SCRIPT_VERSION}/configs/config.yaml ]]; then
+                cp /var/tmp/cn_automation${AUTOMATION_SCRIPT_VERSION}/configs/config.yaml $HOME/cn_automation/configs/config.yaml
                 printf "\r${yel}Sending original unchanged config to new upgrade... ${grn}success${clr}\n"
             else
                 printf "\r${yel}Sending original unchanged config to new upgrade... ${red}failed${clr}\n"
@@ -1170,12 +1169,12 @@ function configure_cron_tab()
 function check_version_for_upgrade()
 {
     printf "\n${yel}Checking automation script and program versioning... (${red}please wait${yel}) "
-    prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/adminauto | grep "AUTOMATION_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
+    prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/adminauto | grep "AUTOMATION_SCRIPT_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
     printf "\r${yel}Checking automation program and autoadmin script versioning... ${grn}complete!                   "
-    printf "\nLatest Version: ${cyn}${bld}$prod_version${clr}  ${grn}Current Version: ${cyn}${bld}$AUTOMATION_VERSION${clr}\n\n"
+    printf "\nLatest Version: ${cyn}${bld}$prod_version${clr}  ${grn}Current Version: ${cyn}${bld}$AUTOMATION_SCRIPT_VERSION${clr}\n\n"
     skip_version_continue=false
 
-    if [[ $prod_version > $AUTOMATION_VERSION ]]; then
+    if [[ $prod_version > $AUTOMATION_SCRIPT_VERSION ]]; then
             printf "${red}New version available! ${clr}(${cyn}${bld}v$prod_version${clr})${grn}\n"
             printf "${bld}${yel}THIS WILL UPGRADE YOUR AUTOADMIN SCRIPT AND YOU WILL\nNEED TO RESTART ${start_under}ADMINAUTO${end_under} BEFORE IT CAN BE USED!${clr}\n"
             printf "${wht}(This is separate from the automation program)\n${clr}"
@@ -1194,14 +1193,43 @@ function check_version_for_upgrade()
                 echo
                 if [[ $action = "install" || $action = "upgrade" ]]; then
                     printf "${red}${bld}${start_under}WARNING${clr}\n${cyn}If you continue with this installation.\n"
-                    printf "Version ${start_under}${AUTOMATION_VERSION}${end_under} will be installed, latest version is ${start_under}${prod_version}${clr}\n"
+                    printf "Version ${start_under}${AUTOMATION_SCRIPT_VERSION}${end_under} will be installed, latest version is ${start_under}${prod_version}${clr}\n"
                 else
-                    printf "${red}${bld}${start_under}WARNING${clr}\n${cyn}If you continue with this version of ADMINAUTO ${start_under}${wht}${AUTOMATION_VERSION}${end_under}${yel}.\n"
+                    printf "${red}${bld}${start_under}WARNING${clr}\n${cyn}If you continue with this version of ADMINAUTO ${start_under}${wht}${AUTOMATION_SCRIPT_VERSION}${end_under}${yel}.\n"
                     printf "Unexpected results are more likely than not to occur! \n${bld}HIGHLY RECOMMENDED TO UPGRADE${clr}\n(Press \"n\" and restart adminauto to upgrade)\n"
                 fi
             fi
     else
         skip_version_continue=true
+    fi
+
+    if [[ -d $HOME/cn_automation ]]; then
+        
+        printf "${yel}==> Looking up installed version... "
+        current_program_version=$(python3 $HOME/cn_automation/auotmation.py | awk '{print $3}')
+        printf "\r${yel}==> Looking up script version... ${grn}complete${clr}\n"
+        printf "${yel}==> Looking up current release version... "
+        AUTOMATION_PROG_VERSION=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/automation.py | grep "Version" | head -1 | awk '{print $3}' &)
+        printf "\r${yel}==> Looking up current release version... ${grn}complete${clr}\n"
+
+        skip_version_prog_continue=true
+        if [[ $current_program_version = $AUTOMATION_PROG_VERSION ]]; then
+            skip_version_prog_continue=false
+            printf "${bld}${yel}PROGRAM IS ALREADY AT CURRENT VERSION!${clr}\n"
+            question="Do you want to install the ${start_under}same version${end_under} $current_program_version over itself?"
+            test_yes_no continue_only n
+        elif [[ $current_program_version < $AUTOMATION_PROG_VERSION ]]; then
+            skip_version_prog_continue=false
+            printf "${bld}${yel}PROGRAM IS A ${red}PREVIOUS${yel} VERSION THEN CURRENT VERSION!${clr}\n"
+            question="Do you want to install the ${start_under}an older version${end_under} $current_program_version over the current?"
+            test_yes_no continue_only n
+        fi
+        if [[ $skip_version_prog_continue = false ]]; then
+            if [[ ${userdata[continue_only]} = true ]]; then
+                dag_statement
+                exit 0
+            fi
+        fi
     fi
 }
 
@@ -1210,7 +1238,7 @@ function print_help_menu()
 {
     echo
     printf "${grn}${start_under}Node Operator Automation Helper Script${end_under}\n"
-    printf "${wht}${b_mag}Version: ${bld}${AUTOMATION_VERSION}${clr}\n\n"
+    printf "${wht}${b_mag}Version: ${bld}${AUTOMATION_SCRIPT_VERSION}${clr}\n\n"
     printf "${yel}${bld}usage: adminauto [-h] [-i] [-c] [-s] [-r] [-k] [-v] [-cr]${clr}\n\n"
     printf "${grn}${bld}THIS IS FOR USE WITH THE \"AUTO\" ARGUMENT (auto run)${clr}\n"
     printf "${grn}This does not deal with single alerts, reports, or logs\n\n"
@@ -1294,7 +1322,7 @@ case "$1" in
     -v) action="version"
         print_banner 1
         
-        printf "${wht}${b_mag}ADMINAUTO VERSION: ${bld}${yel}${AUTOMATION_VERSION}${clr}\n"
+        printf "${wht}${b_mag}ADMINAUTO VERSION: ${bld}${yel}${AUTOMATION_SCRIPT_VERSION}${clr}\n"
         dag_statement
         exit 0
         ;;
@@ -1356,11 +1384,11 @@ if [[ ${userdata[continue_only]} == true ]]; then
             ;;
 
         install) 
+            check_version_for_upgrade
             special_case_beta_upgrade # check if user is attempting to upgrade from beta version
                                       # this would mean that they manually installed the program
                                       # also works for manual installations that might be trying
                                       # to convert to adminauto
-            check_version_for_upgrade
             if [[ $skip_version_continue = false ]]; then
                 question="Continue?"
                 test_yes_no continue_only n
