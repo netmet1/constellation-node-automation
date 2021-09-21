@@ -1425,27 +1425,42 @@ if [[ ${userdata[continue_only]} == true ]]; then
             ;;
 
         alert)
-            python3 $HOME/cn_automation/automation alert
+            printf "${cyn}Processing alert...${clr}"
+            python3 $HOME/cn_automation/automation.py alert
+            printf "\r${cyn}Processing alert...${grn}Sent!${clr}\n"
             ;;
 
-        alert_consolde)
-            python3 $HOME/cn_automation/automation alert -p
+        alert_console)
+            printf "${cyn}Preparing alert for print...${clr}\n"
+            python3 $HOME/cn_automation/automation.py alert -p
+            dag_statement
+            exit 0
             ;;
 
         report)
-            python3 $HOME/cn_automation/automation report
+            printf "${cyn}Processing end of day report...${clr}"
+            python3 $HOME/cn_automation/automation.py report
+            printf "\r${cyn}Processing end of day report...${grn}Sent!${clr}\n"
             ;;
 
         report_console)
-            python3 $HOME/cn_automation/automation report -p
+            printf "${cyn}Preparing end of day report for print...${clr}\n"
+            python3 $HOME/cn_automation/automation.py report -p
+            dag_statement
+            exit 0
             ;;
 
         health)
-            python3 $HOME/cn_automation/automation health
+            printf "${cyn}Processing health check...${clr}"
+            python3 $HOME/cn_automation/automation.py health
+            printf "\r${cyn}Processing health check...${grn}Sent!${clr}\n"            
             ;;
 
-        health_consolde)
-            python3 $HOME/cn_automation/automation health -p
+        health_console)
+            printf "${cyn}Preparing health check for print...${clr}\n"
+            python3 $HOME/cn_automation/automation.py health -p
+            dag_statement
+            exit 0
             ;;
 
         *) printf "$invalid_error"
