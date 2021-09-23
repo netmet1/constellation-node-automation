@@ -61,7 +61,7 @@ configuration:
   report:
     enabled: true
     estimates:
-      - .10
+      - .40
       - .50
       - 1
       - 3
