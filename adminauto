@@ -43,8 +43,7 @@ config_steps=11
 current_step=1
 g_install_issue=false # global installation issue
 beta_version_found=false
-#branch_name="main" # dev vs. prod
-branch_name="fix-issue-no8" # dev vs. prod
+branch_name="main" # dev vs. prod
 declare -A userdata
 
 AUTOMATION_SCRIPT_VERSION="2.0.2"
