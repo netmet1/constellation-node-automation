@@ -46,8 +46,8 @@ beta_version_found=false
 branch_name="main" # dev vs. prod
 declare -A userdata
 
-AUTOMATION_SCRIPT_VERSION="2.0.1"
-AUTOMATION_PROGRAM_VERSION="2.0"
+AUTOMATION_SCRIPT_VERSION="2.0.2"
+AUTOMATION_PROGRAM_VERSION="2.0.2"
 
 function dag_statement()
 {
@@ -74,6 +74,8 @@ function disclaimer()
     printf "I am not employeed by Constellation.io; however,\n"
     printf "I ${bld}${red}love${clr}${b_blk}${wht} the community and want to give back.\n\n"
     printf "${wht}DESIGNED TO WORK ON UBUNTU ONLY (at the current moment).\n"
+    printf "${red}MAKE SURE YOUR TERMINAL IS WIDE ENOUGH OTHERWISE SOME TEXT.\n"
+    printf "${red}WILL WRAP OVER ITSELF AND WILL LOOK UNCOMPRESHENSIBLE.\n"
     printf "${wht}Install directory: ${bld}${yel}\$HOME/cn_automation${clr}${b_blk}${wht}\n\n"
 }
 
@@ -615,7 +617,7 @@ function perform_configuration()
     if [[ ${userdata[continue_only]} = true ]]; then
         done_searching=false
         while [ $done_searching = false ]; do
-            printf "${cyn}Single word search only. ${mag}EG) ${wht}Los_Angeles\n"
+            printf "${cyn}Single word search only. ${mag}EG) ${wht}America/Los_Angeles\n"
             read -e -p "${yel}Enter search term to filter or <enter> for full list: ${b_blk}${wht}" tz_search
             if [[ -z $tz_search ]]; then
                 search_action="-a"
@@ -639,6 +641,7 @@ function perform_configuration()
     
     print_banner 1
 
+    # interval timer on/off
     printf "\n${bld}${mag}You may ${red}ONLY${mag} want health checks.\n"
     printf "You can disable the automation program alerts here and it will\n"
     printf "disable this feature, allowing only for health checks.${clr}${b_blk}${wht}\n"
@@ -1285,7 +1288,7 @@ printf "${b_blk}${wht}\n"
 
 case "$1" in
     -i) action="install";;
-    -u) action="upgrade";;
+    -u) action="install";;
     -a) action="alert" 
         if [[ $2 = "-p" ]]; then
             action="alert_console"

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from pprint import pprint
 import os
 import yaml
 import re
@@ -17,6 +18,9 @@ class Config():
         self.setup_flags()
         self.config_default_check()
         self.setup_dates_times()
+
+        # debug
+        # pprint(vars(self))
 
 
     def reload_needed(self):
