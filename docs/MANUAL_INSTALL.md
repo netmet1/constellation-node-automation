@@ -122,6 +122,7 @@ nodeuser@constellation-node:~/#
 4. Grab the latest release of the program from the github (here) repository: `releases` section
 
 **MAKE SURE YOU DOWNLOAD THE CORRECT VERSION (LATEST).** (example shows v2.0)
+**THIS MAY NOT BE THE CURRENT VERSION: This document will only be updated when the procedure changes.**
 ```
 wget https://github.com/netmet1/constellation-node-automation/archive/refs/tags/v2.0.tar.gz
 ```

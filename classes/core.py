@@ -1,4 +1,3 @@
-import builtins
 from datetime import datetime, timedelta
 from time import sleep
 from pprint import pprint
@@ -118,19 +117,19 @@ class Core():
 
                     self.node_health(now)
 
-                    next_run = self.config.last_run + timedelta(minutes=self.config.alert_interval)
-                    next_run = next_run.strftime("%H:%M")
-                    next_run = datetime.strptime(next_run,"%H:%M").time()
-                    last_run = self.config.last_run.strftime("%H:%M")
-                    last_run = datetime.strptime(last_run,"%H:%M").time()
+                    self.next_run = self.config.last_run + timedelta(minutes=self.config.alert_interval)
+                    self.next_run = self.next_run.strftime("%H:%M")
+                    self.next_run = datetime.strptime(self.next_run,"%H:%M").time()
+                    self.last_run = self.config.last_run.strftime("%H:%M")
+                    self.last_run = datetime.strptime(self.last_run,"%H:%M").time()
 
-                    if (now >= self.config.start_time and now <= self.config.report_time) and last_run < self.config.report_time: 
+                    if (now >= self.config.start_time and now <= self.config.report_time) and self.last_run < self.config.report_time: 
                         if now == self.config.report_time:
                             self.config.last_run = datetime.now(self.config.tz)
                             self.config.create_report = True
                             self.config.silence_writelog = True
                             self.node_checkup()
-                        elif now >= next_run:
+                        elif now >= self.next_run:
                             self.config.last_run = datetime.now(self.config.tz)
                             self.config.create_report = False
                             self.config.silence_writelog = False
@@ -139,8 +138,10 @@ class Core():
                                 # rebuild configuration because user modified
                                 self.config = Config(self.config.dag_args)
                                 break
-                                
-                            self.node_checkup()
+
+                            if self.config.last_run_hour < 23:    
+                                self.node_checkup()
+                            self.config.last_run_hour = int(self.config.last_run.strftime("%H"))
                         sleep(2)
                     else:
                         break

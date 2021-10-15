@@ -2,7 +2,7 @@
 # 
 #  Constellation Node Automation Program
 #  
-#  last update:  2021-08
+#  last update:  2021-10
 #  author:  hgtp://netmet
 #
 #  DISCLAIMER:  I do not work for 
@@ -11,7 +11,6 @@
 #  this is just a script to help the 
 #  community.
 #
-#  Version 2.0
 # ===================================== 
 
 import argparse
@@ -19,7 +18,7 @@ from classes.core import Core
 from classes.config_obj import Config
 from classes.logs import Logger
 
-def retrieve_arguments(version="2.0"):
+def retrieve_arguments(version="2.0.2"):
     dag_parser = argparse.ArgumentParser(description="dag alerting script")
 
     dag_parser.add_argument('Action',
@@ -53,7 +52,6 @@ def retrieve_arguments(version="2.0"):
 # ===================
 # Start
 # ===================
-
 
 if __name__ == "__main__":
     dag_args = retrieve_arguments()

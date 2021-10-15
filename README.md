@@ -49,19 +49,14 @@ A Python automation and status program to run on your node.  It will send you al
 
 ---
 
-##### Version: v2.0
+##### Version: v2.0.2
 
 ---
 ### CHANGES <a name="changes"></a>
 
-- **REMOVED BETA CLASSIFICATION**.  The `automation` program has been vetted over time and it is felt that it is ready to continue its lifecycle as a regular release.
-- `adminauto` script has been added to simplify the install, upgrade, start, and stop procedures previously done manually and requiring more interaction form an advanced point of view.  Also offers alternative to execute alerts, reports, and health checks.
-- Separated out emails from MMS in order to fix some buggy results in the MMS egress messaging.
-- Code refactoring.
-- Enable/Disable Intervals to allow health checks only.
-- Various Bug fixes.
-- Updated the `End of Day` report output to include collateral section.
-
+- Minor updates to some verbiage in the `adminauto` installation, configuration script
+- Fixes `0:00` to `0:00` multiple alerting bug
+- Fixes dynamic CPU core acquisition bug.
 
 ---
 ### FEATURES <a name="features"></a>
@@ -106,7 +101,7 @@ A Python automation and status program to run on your node.  It will send you al
 
 | command | Parameters | Optional |
 | ------- | :-------: | :------- | 
-| `python3 automation.py` | `alert` `report` `auto` `health` `silent` | `-p`, `v`, `&` |
+| `python3 automation.py` | `alert` `report` `auto` `health` `silent` | `-p`, `-v`, `&` |
 
 > `&` will run the system in the background until `ctl-c` performed.
 
