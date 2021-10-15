@@ -1177,7 +1177,7 @@ function configure_cron_tab()
 function check_version_for_upgrade()
 {
     printf "\n${yel}Checking adminauto versioning against the repository... (${red}please wait${yel}) "
-    prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/adminauto | grep "AUTOMATION_SCRIPT_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}' &)
+    prod_version=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/adminauto | grep "AUTOMATION_SCRIPT_VERSION=" | head -1 | tr -d '"' | tr '=' ' ' | awk '{print $2}')
     printf "\r${yel}Checking script versioning against the repository version... ${grn}complete!                      \n"
     printf "Repository Version: ${cyn}${bld}${prod_version}${clr}${b_blk}  ${grn}Node's Version: ${cyn}${bld}${AUTOMATION_SCRIPT_VERSION}${clr}${b_blk}${wht}\n\n"
     skip_version_continue=false
@@ -1218,7 +1218,7 @@ function check_version_for_upgrade()
         current_program_version=$(python3 $HOME/cn_automation/automation.py --version | awk '{print $3}')
         printf "\r${yel}==> Looking up automation program version... ${grn}complete${b_blk}\n"
         printf "${yel}==> Looking up current release version... "
-        AUTOMATION_PROG_VERSION=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/automation.py | grep "Version" | head -1 | awk '{print $3}' &)
+        AUTOMATION_PROG_VERSION=$(curl -s https://raw.githubusercontent.com/netmet1/constellation-node-automation/$branch_name/automation.py | grep "version" | head -1 | awk 'BEGIN{FS="\""}{print $2}')
         printf "\r${yel}==> Looking up current release version... ${grn}complete                      \n"
         printf "Repository Version: ${cyn}${bld}${AUTOMATION_PROG_VERSION}${b_blk}${wht}  ${grn}Node's Version: ${cyn}${bld}${current_program_version}${b_blk}${wht}\n\n"
 
@@ -1288,7 +1288,7 @@ printf "${b_blk}${wht}\n"
 
 case "$1" in
     -i) action="install";;
-    -u) action="install";;
+    -u) action="upgrade";;
     -a) action="alert" 
         if [[ $2 = "-p" ]]; then
             action="alert_console"
@@ -1389,7 +1389,7 @@ if [[ ${userdata[continue_only]} == true ]]; then
             fi
             ;;
 
-        install) 
+        install|upgrade) 
             check_version_for_upgrade
             special_case_beta_upgrade # check if user is attempting to upgrade from beta version
                                       # this would mean that they manually installed the program
