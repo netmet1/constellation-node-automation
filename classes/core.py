@@ -114,7 +114,6 @@ class Core():
 
                 while True:
                     now = self.config.build_time(0,"forward")
-                    now_basic_time = now.strftime("%H:%M")
 
                     self.node_health(now)
 
@@ -130,7 +129,7 @@ class Core():
                             self.config.create_report = True
                             self.config.silence_writelog = True
                             self.node_checkup()
-                        elif now_basic_time == self.next_run:
+                        elif now >= self.next_run:
                             self.config.last_run = datetime.now(self.config.tz)
                             self.config.create_report = False
                             self.config.silence_writelog = False
@@ -139,8 +138,10 @@ class Core():
                                 # rebuild configuration because user modified
                                 self.config = Config(self.config.dag_args)
                                 break
-                                
-                            self.node_checkup()
+
+                            if self.config.last_run_hour < 23:    
+                                self.node_checkup()
+                            self.config.last_run_hour = int(self.config.last_run.strftime("%H"))
                         sleep(2)
                     else:
                         break

@@ -76,6 +76,7 @@ class Config():
         self.start_time = self.start_time.time()
         self.end_time = self.end_time.time()
         self.report_time = self.report_time.time()
+        self.last_run_hour = int(datetime.now(self.tz).strftime("%H"))
 
         # Final Test of Log Dates
         if self.action == "log":
@@ -337,7 +338,7 @@ class Config():
 
 
     def grab_cpu_cores(self):
-        result_stream = os.popen("cat /proc/cpuinfo | grep 'cpu cores' | awk '{print $4}' | tail -1")
+        result_stream = os.popen("lscpu | grep '^CPU(s):' | awk '{print $2}' | tail -1")
         current_load = float(result_stream.read())
         current_load = current_load - (1 - self.load)
         return current_load
